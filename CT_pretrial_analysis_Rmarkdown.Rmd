@@ -1,0 +1,453 @@
+---
+title: "CT_pretrial_analysis"
+author: "Jesse Warren"
+date: "5/2/2020"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(tidyverse)
+library(janitor)
+library(data.table)
+library(RSocrata)
+library(ggplot2)
+library(ggrepel)
+library(extrafont)
+library(ggthemes)
+library(reshape)
+library(grid)
+library(scales)
+library(RColorBrewer)
+library(gridExtra)
+library(viridis)
+library(hexbin)
+library(sandwich)
+library(stargazer)
+
+library(sf)
+library(ggpubr)
+library(scales)
+options(scipen=999)
+```
+
+Large parts of code adapted from Alex Albright's descriptive analysis, which is detailed found here: https://thelittledataset.com/2019/08/12/ct-pretrial-descriptives/
+```{r Load files, message=FALSE, warning=FALSE}
+#2 options to load data:
+  #1. straight from online open data repository for most up to date data
+  #2. from local files (downloaded 5/2/2020)
+
+#option 1.
+#load pretrial data from Connecticut open data site  
+CT_pretrial_data_URL <- "https://data.ct.gov/Public-Safety/Accused-Pre-Trial-Inmates-in-Correctional-Faciliti/b674-jy6w"
+#CT_pretrial_raw <- read.socrata((CT_pretrial_data_URL))
+
+#option 2.
+#load from local file, in Data/ folder
+CT_pretrial_raw <- fread("Data/Accused_Pre-Trial_Inmates_in_Correctional_Facilities.csv")
+
+#fix race names
+CT_pretrial_raw$RACE[CT_pretrial_raw$RACE == 'AMER IND'] <- 'Native American'
+CT_pretrial_raw$RACE[CT_pretrial_raw$RACE == 'ASIAN'] <- 'Asian'
+CT_pretrial_raw$RACE[CT_pretrial_raw$RACE == 'BLACK'] <- 'Black'
+CT_pretrial_raw$RACE[CT_pretrial_raw$RACE == 'WHITE'] <- 'White'
+CT_pretrial_raw$RACE[CT_pretrial_raw$RACE == 'HISPANIC'] <- 'Hispanic'
+
+#clean names, set variable types, fix dates
+CT_pretrial_raw <- CT_pretrial_raw %>% 
+  clean_names() %>% 
+  mutate(identifier = as.factor(identifier),
+         race = as.factor(race),
+         gender = as.factor(gender),
+         offense = as.factor(offense),
+         factility = as.factor(facility),
+         detainer = as.factor(detainer),
+         download_date = as.Date(download_date, '%m/%d/%Y'),
+         latest_admission_date = as.Date(latest_admission_date, '%m/%d/%Y'),
+         identifier = as.character(identifier))
+
+```
+
+
+```{r Preliminary descriptive look, cache = TRUE}
+#how many observations are there?
+nrow(CT_pretrial_raw)
+
+#how many unique people in dataset?
+length(unique(CT_pretrial_raw[,"identifier"])) 
+
+#how many unique person-admissions are there (because some people may have multiple admissions)?
+nrow(unique(CT_pretrial_raw[,c("identifier","latest_admission_date")])) 
+
+#how many total charges for all the admissions in this dataset?
+nrow(unique(CT_pretrial_raw[,c("identifier","latest_admission_date", "offense")]))
+
+#how many unique charges?
+length(unique(CT_pretrial_raw[,"offense"]))
+```
+
+
+```{r Descriptive stats graphs}
+#make a df of charges
+charges <- unique(CT_pretrial_raw[,c("identifier","latest_admission_date", "offense")]) %>%
+  group_by(offense)%>%
+  summarise(count = n())%>%
+  mutate(tot = sum(count),
+         perc = count/tot)
+#make a df of top 10 charges.
+charges10 <- charges %>% 
+  arrange(-perc) %>% 
+  head(10)
+
+#fix up offense
+charges10$offense<-tolower(charges10$offense)
+charges10$offense<-str_remove(charges10$offense, " df")
+charges10$offense<-str_remove(charges10$offense, "  f")
+charges10$offense<-str_remove(charges10$offense, " am")
+charges10$offense<-str_squish(charges10$offense)
+
+#Make a factor for ordering the x axis
+charges10$offense<- factor(charges10$offense, levels = charges10$offense[order(charges10$perc)])
+
+#create graph
+ggplot(data=charges10, aes(x=offense, y=perc)) + 
+  geom_bar(stat = 'identity') +
+  theme_minimal() +
+  scale_y_continuous(labels = percent, limits=c(0,.175), breaks=seq(0,.175,.025)) +
+  theme(plot.title = element_text(hjust = 0)) +
+  labs(x="", y="", caption="These calculations consider all 54,367 unique person-admission-offense observations from INSERT DATES.") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
+  ggtitle("Why Are People in Jail? (Top 10 Charges)", subtitle = "Data Available via Connecticut Open Data")
+```
+
+
+```{r Demographics descriptive look}
+#create df of unique people
+CTpeople <- unique(CT_pretrial_raw[,c("identifier", "race", "gender")])
+
+#get difference between number of unique people, and number of unique people by race and gender as well to see if some people are being coded multiple times as different races/genders
+nrow(CTpeople) - length(unique(CT_pretrial_raw[,"identifier"])) 
+
+#exclude the people coded with different race and/or genders across the time period.
+CTpeople$dup <- duplicated(CTpeople$identifier)
+CTpeopledup <- subset(CTpeople, dup == "TRUE")
+CTpeopledup <- CTpeopledup[,1]
+CTp <- CTpeople %>% 
+  filter(!identifier %in% CTpeopledup)
+CTp <- CTp[,c(1:3)]
+
+#Define colorblind friendly palettes
+# The palette with grey:
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+Pal <- c("#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+# The palette with black:
+cbbPalette <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+#graph
+ggplot(data=CTp, aes(race, fill=gender)) + 
+  geom_bar() +
+  theme_minimal() +
+  scale_fill_manual(name="Gender", values = c("gold", "dodgerblue"), labels=c("Female", "Male")) +
+  theme(plot.title = element_text(hjust = 0)) +
+  labs(x="", y="Number of Pretrial Inmates",
+       caption="The total number of unique pretrial inmates in this time period is INSERT; I present data for INSERT here.\n(I exclude 167 individuals who are coded inconsistently by race or gender over time).\nThe dataset codes Hispanic as a race (this is different than, say, the Census methodology).") +
+  ggtitle("Gender and Race of Connecticut Pretrial Inmates (INSERT DATE)", subtitle = "Data Available via Connecticut Open Data")
+ggsave("Graphs/gender_race.png", width=7, height=4.5, dpi=900)
+```
+
+```{r Compare race to CT population }
+#create race summary df
+CTrace <- CTp %>%
+  group_by(race) %>%
+  summarize(count = n()) %>%
+  mutate(total = sum(count)) %>%
+  mutate(perc = count/total)
+
+
+#Manually add the census data, based on an approximation (since ethnicity, race done differently by the census) from (https://www.census.gov/quickfacts/CT) As of 5/6/2020.
+race <- c('Asian','Black','Hispanic', 'Native American', 'White')
+c_perc <- c(.049, .120, .165, .006, .665)
+census <- data.frame(race, c_perc)
+
+
+#Merge the census and pretrial.
+CTrace_c <- merge(CTrace, census, by="race")
+
+
+#Reshape
+CTrace_c <- CTrace_c %>%
+  gather(source, percent, perc:c_perc)
+
+
+#Make the plot.
+ggplot(data = CTrace_c, aes(x=source, y=percent, fill=race)) + 
+  geom_bar(stat = 'identity') +
+  theme_minimal() +
+  scale_fill_manual(name = "Race", values = cbPalette) +  
+  theme(plot.title = element_text(hjust = 0)) +
+  labs(x="", y="",
+       caption="The pretrial inmate population covers 34,761 people in DOC facilities 7/1/16-7/28/19.\n(I exclude 131 individuals who are coded inconsistently by race or gender over time).\nOverall Population data is estimated from the US Census QuickFacts.")+
+  scale_y_continuous(labels = percent) +
+  scale_x_discrete(labels=c("Overall Population", "Pretrial Inmate Population")) + 
+  ggtitle("Overall Connecticut Population vs. Connecticut Pretrial Inmate Population", subtitle = "Data Available via Connecticut Open Data")
+ggsave("Graphs/race_compare.png", width=7, height=5, dpi=900)
+```
+
+
+```{r View age and race as of 5/2/2020, message=FALSE, warning=FALSE}
+#only look at people in jail as of 5/2/2020
+CT_5_2_2020 <- subset(CT_pretrial_raw, download_date == "2020-05-02")
+
+#look at median age
+median(CT_5_2_2020$age)
+
+#create plot of age and race as of 5/2/2020
+ggplot(data = CT_5_2_2020, aes(age, fill=race)) + 
+  geom_histogram(breaks=seq(15, 80, by = 1)) +
+  theme_minimal() +
+  scale_fill_manual(name="Race", values = cbPalette) +  
+  theme(plot.title = element_text(hjust = 0)) +
+  labs(x="Age", y="Number of Pretrial Inmates",
+       caption="This graphs covers only the inmates present in DOC facilities on 5/2/2020.") +
+  scale_y_continuous(limits=c(0,126), breaks=seq(0,126,25))+
+  scale_x_continuous(limits=c(15,81), breaks=seq(15,80,5))+ 
+  ggtitle("Age and Race of Connecticut Pretrial Inmates (7/28/2019)", subtitle = "Data Available via Connecticut Open Data")
+ggsave("Graphs/age_race-05-02-20.png", width=8, height=5, dpi=900)
+```
+
+#Bond amounts
+## Distribution
+
+Let's plot mean bond amounts with confidence intervals by race.  Let's then focus on the first instance of bail (first observation in the data).
+In effect, we sort by `download_date`. Then we delete duplicates by `identifier` and `latest_admission_date`.
+
+```{r Look at bond distribution}
+#create new bond df
+CTbond <- CT_pretrial_raw[order(CT_pretrial_raw$download_date, CT_pretrial_raw$identifier),]
+
+#remove duplicates of people who were recorded as being booked in twice in one day
+CTbond <- CTbond[!duplicated(CTbond[,c("identifier", "latest_admission_date")]),]
+
+#get number of people in for a certain admission date
+nrow(unique(CTbond))
+
+#get bond range
+min(CTbond$bond_amount)
+max(CTbond$bond_amount)
+
+#codebook notes that bonds under $100 are probably placeholders. check to see how many of them there are
+CTbond %>% 
+  filter(bond_amount<100)%>%
+  nrow()
+
+#exclude them as they are unlikely to be true bond amounts
+CTbond <- CTbond %>% 
+  filter(bond_amount >= 100)
+
+#get mean and median bond amounts - worth noting that data only includes people in jail overnight, meaning this group in the data likely has higher bonds, raising the means we see here
+mean(CTbond$bond_amount)
+median(CTbond$bond_amount)
+
+
+#combine bond df with people df that already has duplicates excluded
+CTbond <- merge(CTbond, CTp, by=c("identifier", "gender", "race"), all = FALSE)
+nrow(CTbond)
+
+#graph distribution of bond amounts, with race as the fill
+ggplot(data = CTbond, aes(bond_amount, fill = race)) +
+  geom_histogram(binwidth = .3) +
+  scale_fill_manual(name = "Race", values = cbPalette) +  
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0)) +
+  labs(x="Bond Amount ($)", y="Number of Pretrial Inmates", 
+       caption="\nThis plot uses a log10 transformation of the bond amount axis.\nEach observation is the first observation of a person-admission. (n=58,910)\n(Again, I exclude individuals who are coded inconsistently by race or gender over time.)\nI consider the bond amount at first day observed in jail for a given date of admission.") +
+  scale_x_log10(labels = comma) +
+  scale_y_continuous(labels = comma) +
+  #scale_x_continuous(limits=c(15,80), breaks=seq(15,80,5)) + 
+  ggtitle("Bond Amounts for Connecticut Pretrial Inmates (INSERT DATES)", subtitle = "Data Available via Connecticut Open Data")
+ggsave("Graphs/bond_dist_race.png", width=8, height=5, dpi=900)
+```
+
+```{r Plot bond means, warning=FALSE}
+#create df of bond summary stats
+CTbondr <- CTbond[,c("race", "bond_amount", "age")] %>% 
+    group_by(race) %>%
+    summarise_all(funs(mean, sd, se = sd(.)/sqrt(n())))
+
+#create boxplot of bond means
+ggplot(CTbondr, aes(x=race, y=bond_amount_mean, colour=race)) + 
+  geom_errorbar(aes(ymin=bond_amount_mean-(1.96*bond_amount_se), 
+                    ymax=bond_amount_mean+(1.96*bond_amount_se)), width=.1) +
+  geom_point() +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0)) +
+  labs(x="", y="Mean Bond Amount ($)", caption="I consider only the first observation of bond amount for a given admission (n=58,910).\nThe means by race are presented with 95% confidence intervals.") +
+  scale_y_continuous(labels = comma, limits=c(0,110500), breaks=seq(0,110000,10000))+
+  #scale_y_continuous(limits=c(0,151), breaks=seq(0,150,25))+
+  ggtitle("Mean Bond of Connecticut Pretrial Inmates by Racial Group", subtitle = "Data Available via Connecticut Open Data")
+ggsave("Graphs/bond_race.png", width=6, height=5, dpi=900)
+```
+
+
+# 4. Time in jail pretrial
+
+Want to focus on the unique person-admission (excluding people who are coded inconsistently over time) observations. I want to focus on people-admissions who are in jail and then are out of the sample. Ie, exclude those still in jail on 5-2-2020. 
+
+Relevant note from codebook:
+
+> LATEST ADMISSION DATE: Most recent date in which the inmate has been admitted. In some instances, this may reflect an original date of admission to a correctional facility. Generally, if a date is more than one year old, an inmate should not be considered to have been held for the entire duration of that time.
+
+So, conceptually, I want to consider the full dataset:
+
+- exclude those people who are coded inconsistently (on race and/or gender)
+- make a variable for length of time in jail (via grouping by person, admission and then taking the sum)
+
+Then, 
+
+- generate an indicator for date variable being 5-2-2020
+- take max of that 5-2-2020 indicator (thus showing which person-admissions are in jail on the last day)
+- exclude those observations, so that now only looking at people who got out at some point 
+
+Last, subset to the earliest date in the data (since bond, facility could alter over time).
+
+```{r}
+#Create new df with just consistently coded people to manipulate
+CTz <- merge(CT_pretrial_raw, CTp, by = c("identifier", "race", "gender"), all = FALSE)
+
+#Make a new variable for length of time in jail for person-admission
+CTz <- CTz %>% 
+   group_by(identifier, latest_admission_date) %>%
+   mutate(inmate_time = n())
+
+#Generate indicator for date being 5-2-2020, take max by person-admission
+CTz$d20 <- as.numeric(CTz$download_date == "2020-05-02")
+CTz <- CTz %>% 
+   group_by(identifier, latest_admission_date) %>%
+   mutate(max.d20 = max(d20))
+
+#Create new df, where i exclude person-admissions for people still in jail for that admission.
+CTz1 <- subset(CTz, CTz$d20 <1 )
+
+#Now just consider the earliest datapoint for each
+CTz1 <- CTz1[order(CTz1$download_date, CTz1$identifier),]
+CTds <- CTz1[!duplicated(CTz1[,c("identifier", "latest_admission_date")]),]
+nrow(unique(CTds))
+
+#So, there are 59,003 unique person-crimes in the data who've been released from jail (excluding inconsistently coded people by gender/race) before 5-02-2020.
+
+#examine how long people stay in jail in CT.
+min(CTds$inmate_time)
+max(CTds$inmate_time)
+mean(CTds$inmate_time)
+median(CTds$inmate_time)
+
+#Plot distribution of length of jail stay.
+CTds$dur <- as.numeric(CTds$inmate_time)
+#below is for the sake of logs
+CTds$dur[CTds$dur==0] <- 1
+
+ggplot(data=CTds, aes(dur, fill=race)) + geom_histogram(binwidth = .25) +
+  scale_fill_manual(name="Race", values = cbPalette) +  
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0))+
+  labs(x="Days Detained", y="Number of Pretrial Inmates", 
+       caption="\nThis plot uses a log10 transformation of the length of jail stay.\nEach observation is for some admission which concluded in a release from jail before 5/2/2020. (n=59,003)\n(Again, I exclude individuals who are coded inconsistently by race or gender over time.)")+
+  scale_y_continuous(labels=comma)+
+  scale_x_log10(labels=comma)+ 
+  ggtitle("Jail Stay Duration Pretrial in Connecticut", subtitle = "Data Available via Connecticut Open Data")
+ggsave("Graphs/inmatetime.png", width=8, height=5, dpi=900)
+```
+
+
+```{r Plot averages in jail stay by race}
+#create df with summary stats of duration
+CTds1 <- CTds[,c("race", "dur", "age")] %>% 
+    group_by(race) %>%
+    summarise_all(funs(mean,sd,se=sd(.)/sqrt(n())))
+
+#plot averages in jail stay by race
+ggplot(CTds1, aes(x = race, y = dur_mean)) +
+  geom_errorbar(aes(ymin=dur_mean-(1.96*dur_se), 
+                    ymax=dur_mean+(1.96*dur_se)), width=.1) +
+  geom_point() +
+  #scale_color_manual(values = cbPalette) +  
+  theme_minimal() + 
+  theme(plot.title = element_text(hjust = 0)) +
+  labs(x="", y="Mean Jail Stay (Days)", caption="Each observation is for some admission which concluded in a release from jail before 5/2/2020. (n=59,003)\n(Again, I exclude individuals who are coded inconsistently by race or gender over time.)\nThe means by race are presented with 95% confidence intervals.")+
+  scale_y_continuous(labels = comma, limits = c(0,85), breaks = seq(0,85,15))+
+  ggtitle("Mean Pretrial Jail Stay by Racial Group", subtitle = "Data Available via Connecticut Open Data")
+ggsave("Graphs/stay-race.png", width=7, height=5, dpi=900)
+```
+
+---
+
+# 5. Time vs. bail
+
+```{r Time vs bail}
+#To look at relationship betwen initial bond and time in jail, merge `CTds` and `CTbond` by `identifier` and `latest_admission_date`.
+bd <- merge(CTds[,c("identifier", "dur", "latest_admission_date", "race")], 
+          CTbond[,c("identifier", "bond_amount", "latest_admission_date", "race")], 
+          by=c("identifier", "latest_admission_date", "race"), all=F)
+
+#view number of observations
+nrow(bd)
+```
+
+There are 58,882 observations to consider -- there are 58,882 unique person-crimes in the data who've been released from jail (excluding inconsistently coded people by gender/race) before 5-2-2020 that also include first observation bond amounts at or above $100 (exclude those below since they are unlikely to be true bond amounts).
+
+```{r warning=FALSE}
+#plot hex chart of initial bond and jail stay
+ggplot(data=bd, aes(x=bond_amount, y=dur))+
+  stat_binhex() + scale_fill_viridis(name="n in hex") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0)) +
+  labs(x="Initial Bond Amount ($)", y="Jail Stay (Days)", caption="\nThe plot displays the frequency of bond amount/jail stay combinations with hexagonal bins. (See legend.) \nObservations include admissions which concluded in a release from jail before 5/2/2020. (n=58,882)")+
+  scale_y_log10(labels=comma)+
+  scale_x_log10(labels=comma)+ 
+  ggtitle("Initial Bond and Jail Stay", subtitle = "Data Available via Connecticut Open Data")
+ggsave("Graphs/bondtime.png", width=8, height=6, dpi=900)
+
+#check correlation
+cor(bd$bond_amount,bd$dur)
+```
+There is a correlation of 0.3918 between time in jail and initial bond bond amount.
+
+# Regression footnote
+
+```{r, message=FALSE, warning=FALSE}
+CTbond <- mutate(CTbond, chargenew = factor(offense)) %>%
+      mutate(fac_factor = factor(facility)) %>%
+      mutate(race_factor = factor(race)) %>%
+      within(race_factor <- relevel(race_factor, ref = 5)) %>%
+      mutate(gender_factor = factor(gender)) %>%
+      within(gender_factor <- relevel(gender_factor, ref = 2))
+```
+
+Use logs on dep variable for regressions.
+```{r, message=FALSE, warning=FALSE}
+reg3l <- lm(log(CTbond$bond_amount) ~  race_factor + gender_factor + age , data=CTbond)
+reg4l <- lm(log(CTbond$bond_amount) ~  race_factor + gender_factor + age + chargenew , data=CTbond)
+```
+
+Make stargazer table with robust standard errors and log of dep var.
+
+```{r, message=FALSE, warning=FALSE}
+# Adjust standard errors
+cov <- vcovHC(reg3l, type = "HC1")
+robust_se <- sqrt(diag(cov))
+cov1 <- vcovHC(reg4l, type = "HC1")
+robust_se1 <- sqrt(diag(cov1))
+
+
+stargazer(reg3l, reg4l, type="text", omit=c("chargenew", "fac_factor"), style="qje",
+          se = list(robust_se, robust_se1),
+          add.lines = list(c("Offense Dummies?", "No", "Yes")),
+          title = "What Explains How Bond is Set?",
+          covariate.labels = c("Asian", "Black", "Hispanic", "Native American", "Female", "Age"),
+          dep.var.labels   = "Log of Dollar Bond Amount", omit.stat=c("f", "ser"),
+          notes = "Using robust standard errors."
+          )
+```
