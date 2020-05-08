@@ -62,7 +62,7 @@ CT_pretrial_raw <- CT_pretrial_raw %>%
          race = as.factor(race),
          gender = as.factor(gender),
          offense = as.factor(offense),
-         factility = as.factor(facility),
+         facility = as.factor(facility),
          detainer = as.factor(detainer),
          download_date = as.Date(download_date, '%m/%d/%Y'),
          latest_admission_date = as.Date(latest_admission_date, '%m/%d/%Y'),
@@ -89,7 +89,7 @@ length(unique(CT_pretrial_raw[,"offense"]))
 ```
 
 
-```{r Descriptive stats graphs}
+```{r why are people in jail graph}
 #make a df of charges
 charges <- unique(CT_pretrial_raw[,c("identifier","latest_admission_date", "offense")]) %>%
   group_by(offense)%>%

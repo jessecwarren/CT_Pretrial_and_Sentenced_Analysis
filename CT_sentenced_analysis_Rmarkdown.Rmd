@@ -1,0 +1,126 @@
+---
+title: "CT_sentenced_analysis"
+author: "Jesse Warren"
+date: "5/7/2020"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(tidyverse)
+library(janitor)
+library(data.table)
+library(RSocrata)
+library(ggplot2)
+library(ggrepel)
+library(extrafont)
+library(ggthemes)
+library(reshape)
+library(grid)
+library(scales)
+library(RColorBrewer)
+library(gridExtra)
+library(viridis)
+library(hexbin)
+library(sandwich)
+library(stargazer)
+
+library(sf)
+library(ggpubr)
+library(scales)
+options(scipen=999)
+```
+
+```{r Load files, message=FALSE, warning=FALSE}
+#2 options to load data:
+  #1. straight from online open data repository for most up to date data
+  #2. from local files (downloaded 5/7/2020)
+
+#option 1.
+#load pretrial data from Connecticut open data site  
+CT_sentenced_data_URL <- "https://data.ct.gov/Public-Safety/Sentenced-Inmates-in-Correctional-Facilities/um73-fxm4"
+#CT_sentenced_raw <- read.socrata((CT_sentenced_data_URL))
+
+#option 2.
+#load from local file, in Data/ folder
+CT_sentenced_raw <- fread("Data/Sentenced_Inmates_in_Correctional_Facilities.csv")
+
+#fix race names
+CT_sentenced_raw$RACE[CT_sentenced_raw$RACE == 'AMER IND'] <- 'Native American'
+CT_sentenced_raw$RACE[CT_sentenced_raw$RACE == 'ASIAN'] <- 'Asian'
+CT_sentenced_raw$RACE[CT_sentenced_raw$RACE == 'BLACK'] <- 'Black'
+CT_sentenced_raw$RACE[CT_sentenced_raw$RACE == 'WHITE'] <- 'White'
+CT_sentenced_raw$RACE[CT_sentenced_raw$RACE == 'HISPANIC'] <- 'Hispanic'
+
+#clean names, set variable types, fix dates
+CT_sentenced_raw <- CT_sentenced_raw %>% 
+  clean_names() %>% 
+  mutate(identifier = as.factor(identifier),
+         race = as.factor(race),
+         gender = as.factor(gender),
+         offense = as.factor(offense),
+         facility = as.factor(facility),
+         detainer = as.factor(detainer),
+         download_date = as.Date(download_date, '%m/%d/%Y'),
+         latest_admission_date = as.Date(latest_admission_date, '%m/%d/%Y'),
+         special_parole_end_date = as.Date(special_parole_end_date, '%m/%d/%Y'),
+         identifier = as.character(identifier))
+
+```
+
+```{r Preliminary descriptive look, cache = TRUE}
+#how many observations are there?
+nrow(CT_sentenced_raw)
+
+#how many unique people in dataset?
+length(unique(CT_sentenced_raw[,"identifier"])) 
+
+#how many unique person-admissions are there (because some people may have multiple admissions)?
+nrow(unique(CT_sentenced_raw[,c("identifier","latest_admission_date")])) 
+
+#how many total charges for all the admissions in this dataset?
+nrow(unique(CT_sentenced_raw[,c("identifier","latest_admission_date", "offense")]))
+
+#how many unique charges?
+length(unique(CT_sentenced_raw[,"offense"]))
+```
+```{r Why are people in prison graph}
+#make a df of charges
+sentenced_charges <- unique(CT_sentenced_raw[,c("identifier","latest_admission_date", "offense")]) %>%
+  group_by(offense)%>%
+  summarise(count = n())%>%
+  mutate(tot = sum(count),
+         perc = count/tot)
+
+#make a df of top 10 charges.
+sentenced_charges10 <- sentenced_charges %>% 
+  arrange(-perc) %>% 
+  head(10)
+
+#fix up offense
+sentenced_charges10$offense <- tolower(sentenced_charges10$offense)
+sentenced_charges10$offense <- str_remove(sentenced_charges10$offense, " df")
+sentenced_charges10$offense <- str_remove(sentenced_charges10$offense, "  f")
+sentenced_charges10$offense <- str_remove(sentenced_charges10$offense, " am")
+sentenced_charges10$offense <- str_remove(sentenced_charges10$offense, " bf")
+sentenced_charges10$offense <- str_remove(sentenced_charges10$offense, " af")
+sentenced_charges10$offense <- str_remove(sentenced_charges10$offense, " cm")
+
+sentenced_charges10$offense <- str_squish(sentenced_charges10$offense)
+
+#Make a factor for ordering the x axis
+sentenced_charges10$offense <- factor(sentenced_charges10$offense, levels = sentenced_charges10$offense[order(sentenced_charges10$perc)])
+
+#create graph
+ggplot(data = sentenced_charges10, aes(x = offense, y = perc)) + 
+  geom_bar(stat = 'identity') +
+  theme_minimal() +
+  scale_y_continuous(labels = percent) +
+  theme(plot.title = element_text(hjust = 0)) +
+  labs(x="", y="", caption="These calculations consider all 34,764 unique person-admission-offense observations from 8-22-2017 to 5-7-2020.") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
+  ggtitle("Why Are People in Prison? (Top 10 Charges)", subtitle = "Data Available via Connecticut Open Data")
+```
