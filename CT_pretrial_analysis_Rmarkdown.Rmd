@@ -120,22 +120,24 @@ ggplot(data=charges10, aes(x=offense, y=perc)) +
   labs(x="", y="", caption="These calculations consider all 54,367 unique person-admission-offense observations from INSERT DATES.") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
   ggtitle("Why Are People in Jail? (Top 10 Charges)", subtitle = "Data Available via Connecticut Open Data")
+ggsave("Graphs/pretrial_reasons_for_arrest.png", width=7, height=4.5, dpi=900)
+
 ```
 
 
 ```{r Demographics descriptive look}
 #create df of unique people
-CTpeople <- unique(CT_pretrial_raw[,c("identifier", "race", "gender")])
+CT_pretrial_people <- unique(CT_pretrial_raw[,c("identifier", "race", "gender")])
 
 #get difference between number of unique people, and number of unique people by race and gender as well to see if some people are being coded multiple times as different races/genders
-nrow(CTpeople) - length(unique(CT_pretrial_raw[,"identifier"])) 
+nrow(CT_pretrial_people) - length(unique(CT_pretrial_raw[,"identifier"])) 
 
 #exclude the people coded with different race and/or genders across the time period.
-CTpeople$dup <- duplicated(CTpeople$identifier)
-CTpeopledup <- subset(CTpeople, dup == "TRUE")
-CTpeopledup <- CTpeopledup[,1]
-CTp <- CTpeople %>% 
-  filter(!identifier %in% CTpeopledup)
+CT_pretrial_people$dup <- duplicated(CT_pretrial_people$identifier)
+CT_pretrial_people_dup <- subset(CT_pretrial_people, dup == "TRUE")
+CT_pretrial_people_dup <- CT_pretrial_people_dup[,1]
+CTp <- CT_pretrial_people %>% 
+  filter(!identifier %in% CT_pretrial_people_dup)
 CTp <- CTp[,c(1:3)]
 
 #Define colorblind friendly palettes
@@ -147,7 +149,7 @@ Pal <- c("#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 cbbPalette <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
 #graph
-ggplot(data=CTp, aes(race, fill=gender)) + 
+ggplot(data = CTp, aes(race, fill=gender)) + 
   geom_bar() +
   theme_minimal() +
   scale_fill_manual(name="Gender", values = c("gold", "dodgerblue"), labels=c("Female", "Male")) +
@@ -155,7 +157,7 @@ ggplot(data=CTp, aes(race, fill=gender)) +
   labs(x="", y="Number of Pretrial Inmates",
        caption="The total number of unique pretrial inmates in this time period is INSERT; I present data for INSERT here.\n(I exclude 167 individuals who are coded inconsistently by race or gender over time).\nThe dataset codes Hispanic as a race (this is different than, say, the Census methodology).") +
   ggtitle("Gender and Race of Connecticut Pretrial Inmates (INSERT DATE)", subtitle = "Data Available via Connecticut Open Data")
-ggsave("Graphs/gender_race.png", width=7, height=4.5, dpi=900)
+ggsave("Graphs/pretrial_gender_race.png", width=7, height=4.5, dpi=900)
 ```
 
 ```{r Compare race to CT population }
@@ -193,7 +195,7 @@ ggplot(data = CTrace_c, aes(x=source, y=percent, fill=race)) +
   scale_y_continuous(labels = percent) +
   scale_x_discrete(labels=c("Overall Population", "Pretrial Inmate Population")) + 
   ggtitle("Overall Connecticut Population vs. Connecticut Pretrial Inmate Population", subtitle = "Data Available via Connecticut Open Data")
-ggsave("Graphs/race_compare.png", width=7, height=5, dpi=900)
+ggsave("Graphs/pretrial_race_compare.png", width=7, height=5, dpi=900)
 ```
 
 
@@ -212,10 +214,10 @@ ggplot(data = CT_5_2_2020, aes(age, fill=race)) +
   theme(plot.title = element_text(hjust = 0)) +
   labs(x="Age", y="Number of Pretrial Inmates",
        caption="This graphs covers only the inmates present in DOC facilities on 5/2/2020.") +
-  scale_y_continuous(limits=c(0,126), breaks=seq(0,126,25))+
-  scale_x_continuous(limits=c(15,81), breaks=seq(15,80,5))+ 
-  ggtitle("Age and Race of Connecticut Pretrial Inmates (7/28/2019)", subtitle = "Data Available via Connecticut Open Data")
-ggsave("Graphs/age_race-05-02-20.png", width=8, height=5, dpi=900)
+  #scale_y_continuous(limits=c(0,126), breaks=seq(0,126,25))+
+  #scale_x_continuous(limits=c(15,81), breaks=seq(15,80,5))+ 
+  ggtitle("Age and Race of Connecticut Pretrial Inmates (5-2-2020)", subtitle = "Data Available via Connecticut Open Data")
+ggsave("Graphs/pretrial_age_race-05-02-20.png", width=8, height=5, dpi=900)
 ```
 
 #Bond amounts
@@ -268,7 +270,7 @@ ggplot(data = CTbond, aes(bond_amount, fill = race)) +
   scale_y_continuous(labels = comma) +
   #scale_x_continuous(limits=c(15,80), breaks=seq(15,80,5)) + 
   ggtitle("Bond Amounts for Connecticut Pretrial Inmates (INSERT DATES)", subtitle = "Data Available via Connecticut Open Data")
-ggsave("Graphs/bond_dist_race.png", width=8, height=5, dpi=900)
+ggsave("Graphs/pretrial_bond_dist_race.png", width=8, height=5, dpi=900)
 ```
 
 ```{r Plot bond means, warning=FALSE}
@@ -288,7 +290,7 @@ ggplot(CTbondr, aes(x=race, y=bond_amount_mean, colour=race)) +
   scale_y_continuous(labels = comma, limits=c(0,110500), breaks=seq(0,110000,10000))+
   #scale_y_continuous(limits=c(0,151), breaks=seq(0,150,25))+
   ggtitle("Mean Bond of Connecticut Pretrial Inmates by Racial Group", subtitle = "Data Available via Connecticut Open Data")
-ggsave("Graphs/bond_race.png", width=6, height=5, dpi=900)
+ggsave("Graphs/_pretrial_bond_race.png", width=6, height=5, dpi=900)
 ```
 
 
@@ -358,7 +360,7 @@ ggplot(data=CTds, aes(dur, fill=race)) + geom_histogram(binwidth = .25) +
   scale_y_continuous(labels=comma)+
   scale_x_log10(labels=comma)+ 
   ggtitle("Jail Stay Duration Pretrial in Connecticut", subtitle = "Data Available via Connecticut Open Data")
-ggsave("Graphs/inmatetime.png", width=8, height=5, dpi=900)
+ggsave("Graphs/pretrial_inmatetime.png", width=8, height=5, dpi=900)
 ```
 
 
@@ -379,7 +381,7 @@ ggplot(CTds1, aes(x = race, y = dur_mean)) +
   labs(x="", y="Mean Jail Stay (Days)", caption="Each observation is for some admission which concluded in a release from jail before 5/2/2020. (n=59,003)\n(Again, I exclude individuals who are coded inconsistently by race or gender over time.)\nThe means by race are presented with 95% confidence intervals.")+
   scale_y_continuous(labels = comma, limits = c(0,85), breaks = seq(0,85,15))+
   ggtitle("Mean Pretrial Jail Stay by Racial Group", subtitle = "Data Available via Connecticut Open Data")
-ggsave("Graphs/stay-race.png", width=7, height=5, dpi=900)
+ggsave("Graphs/pretrial_stay-race.png", width=7, height=5, dpi=900)
 ```
 
 ---
@@ -408,7 +410,7 @@ ggplot(data=bd, aes(x=bond_amount, y=dur))+
   scale_y_log10(labels=comma)+
   scale_x_log10(labels=comma)+ 
   ggtitle("Initial Bond and Jail Stay", subtitle = "Data Available via Connecticut Open Data")
-ggsave("Graphs/bondtime.png", width=8, height=6, dpi=900)
+ggsave("Graphs/pretrial_bondtime.png", width=8, height=6, dpi=900)
 
 #check correlation
 cor(bd$bond_amount,bd$dur)

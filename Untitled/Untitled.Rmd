@@ -1,0 +1,40 @@
+
+---
+title: "Untitled"
+author: "Jesse Warren"
+date: "5/13/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(tidyverse)
+
+```
+
+
+
+
+```{r load data}
+library(measurements)
+
+dms <- "49533847"
+
+dms_spaced <- paste0(substring(dms, 1, 2),
+       " ",
+       substring(dms, 3, 4),
+       " ",
+       substring(dms, 5, 6),
+       ".",
+       substring(dms, 7, 8))
+
+conv_unit(dms_spaced, "deg_min_sec", "dec_deg")
+```
+
+
+
+
+```{r}
+
+```
+

@@ -1,0 +1,229 @@
+---
+title: "Untitled"
+author: "Jesse Warren"
+date: "5/13/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(tidyverse)
+library(janitor)
+library(data.table)
+library(RSocrata)
+library(ggplot2)
+library(ggrepel)
+library(extrafont)
+library(ggthemes)
+library(reshape)
+library(grid)
+library(scales)
+library(RColorBrewer)
+library(gridExtra)
+library(viridis)
+library(hexbin)
+library(sandwich)
+library(stargazer)
+
+library(sf)
+library(ggpubr)
+library(scales)
+options(scipen=999)
+```
+
+
+
+
+```{r load pretrial data}
+#2 options to load data:
+  #1. straight from online open data repository for most up to date data
+  #2. from local files (downloaded 5/2/2020)
+
+#option 1.
+#load pretrial data from Connecticut open data site  
+CT_analysis_pretrial_data_URL <- "https://data.ct.gov/Public-Safety/Accused-Pre-Trial-Inmates-in-Correctional-Faciliti/b674-jy6w"
+#CT__analysis_pretrial_raw <- read.socrata((CT_pretrial_data_URL))
+
+#option 2.
+#load from local file, in Data/ folder
+CT_analysis_pretrial_raw <- fread("Data/Accused_Pre-Trial_Inmates_in_Correctional_Facilities.csv")
+
+#create fix race names function
+fix_race_names_function <- function(df) {
+  df$RACE[df$RACE == 'AMER IND'] <- 'Native American'
+  df$RACE[df$RACE == 'ASIAN'] <- 'Asian'
+  df$RACE[df$RACE == 'BLACK'] <- 'Black'
+  df$RACE[df$RACE == 'WHITE'] <- 'White'
+  df$RACE[df$RACE == 'HISPANIC'] <- 'Hispanic'
+  return(df)
+}
+
+#fix race names
+CT_analysis_pretrial_raw <- fix_race_names_function(CT_analysis_pretrial_raw)
+
+#clean names, set variable types, fix dates
+CT_analysis_pretrial_raw <- CT_analysis_pretrial_raw %>% 
+  clean_names() %>% 
+  mutate(identifier = as.character(identifier),
+         race = as.factor(race),
+         gender = as.factor(gender),
+         age = as.numeric(age),
+         offense = as.character(offense),
+         facility = as.factor(facility),
+         detainer = as.factor(detainer),
+         download_date = as.Date(download_date, '%m/%d/%Y'),
+         latest_admission_date = as.Date(latest_admission_date, '%m/%d/%Y')) %>% 
+  dplyr::rename(pretrial_age = age,
+         pretrial_facility = facility,
+         pretrial_detainer =  detainer,
+         pretrial_download_date = download_date, 
+         pretrial_latest_admission_date = latest_admission_date)
+
+CT_analysis_pretrial_clean <- CT_analysis_pretrial_raw
+```
+
+```{r load sentenced data}
+#2 options to load data:
+  #1. straight from online open data repository for most up to date data
+  #2. from local files (downloaded 5/7/2020)
+
+#option 1.
+#load pretrial data from Connecticut open data site  
+CT_analysis_sentenced_data_URL <- "https://data.ct.gov/Public-Safety/Sentenced-Inmates-in-Correctional-Facilities/um73-fxm4"
+#CT_analysis_sentenced_raw <- read.socrata((CT_sentenced_data_URL))
+
+#option 2.
+#load from local file, in Data/ folder
+CT_analysis_sentenced_raw <- fread("Data/Sentenced_Inmates_in_Correctional_Facilities.csv")
+
+#fix race names
+CT_analysis_sentenced_raw <- fix_race_names_function(CT_analysis_sentenced_raw)
+
+#clean names, set variable types, fix dates
+CT_analysis_sentenced_raw <- CT_analysis_sentenced_raw %>% 
+  clean_names() %>% 
+  mutate(identifier = as.character(identifier),
+         race = as.factor(race),
+         gender = as.factor(gender),
+         age = as.numeric(age),
+         offense = as.character(offense),
+         facility = as.factor(facility),
+         detainer = as.factor(detainer),
+         download_date = as.Date(download_date, '%m/%d/%Y'),
+         end_sentence_date = as.Date(end_sentence_date, '%m/%d/%Y'),
+         latest_admission_date = as.Date(latest_admission_date, '%m/%d/%Y'),
+         special_parole_end_date = as.Date(special_parole_end_date, '%m/%d/%Y')) %>% 
+  dplyr::rename(sentenced_age = age, 
+         sentenced_facility = facility, 
+         sentenced_detainer = detainer,
+         sentenced_download_date = download_date,
+         sentenced_latest_admission_date = latest_admission_date)
+
+CT_analysis_sentenced_clean <- CT_analysis_sentenced_raw
+```
+
+```{r create smaller dataframes to work with to test and DELETE LATER}
+##DELETE LATER##
+
+#only get first x rows of each
+CT_analysis_pretrial_clean <- tail(CT_analysis_pretrial_raw, 120000)
+CT_analysis_sentenced_clean <- head(CT_analysis_sentenced_raw, 120000)
+
+```
+
+```{r remove inconsistently coded race and gender observations}
+#create dfs of unique people
+CT_analysis_pretrial_people <- unique(CT_analysis_pretrial_clean[,c("identifier", "race", "gender")])
+CT_analysis_sentenced_people <- unique(CT_analysis_sentenced_clean[,c("identifier", "race", "gender")])
+
+#get difference between number of unique people, and number of unique people by race and gender as well to see if some people are being coded multiple times as different races/genders
+nrow(CT_analysis_pretrial_people) - length(unique(CT_analysis_pretrial_clean[,"identifier"])) 
+nrow(CT_analysis_sentenced_people) - length(unique(CT_analysis_sentenced_clean[,"identifier"])) 
+
+
+#exclude the people coded with different race and/or genders
+exclude_inconsistent_people_vec <- CT_analysis_pretrial_people$identifier[duplicated(CT_analysis_pretrial_people$identifier)]
+exclude_inconsistent_people_vec <- append(exclude_inconsistent_people_vec, CT_analysis_sentenced_people$identifier[duplicated(CT_analysis_sentenced_people$identifier)])
+
+CT_analysis_pretrial_clean <- CT_analysis_pretrial_clean %>% 
+  filter(!identifier %in% exclude_inconsistent_people_vec)
+CT_analysis_sentenced_clean <- CT_analysis_sentenced_clean %>% 
+  filter(!identifier %in% exclude_inconsistent_people_vec)
+```
+
+```{r get one observation per charge for the pretrial detention dataset}
+#Create new df that will have only one observation per charge
+CT_analysis_pretrial_clean_1obs <- CT_analysis_pretrial_clean
+
+#Make a new variable for length of time in jail for person-admission
+CT_analysis_pretrial_clean_1obs <- CT_analysis_pretrial_clean_1obs %>% 
+   group_by(identifier, pretrial_latest_admission_date) %>%
+   mutate(pretrial_detention_length = n())
+
+#Generate indicator for date being most recent download date take max by person-admission
+most_recent_pretrial_download_date <- max(CT_analysis_pretrial_clean_1obs$pretrial_download_date)
+
+#this checks and sees if their pretrial download date is the most recent one available, indicating they are still in jail. max.still_in_jail tells is 1 if they are still in jail as of this data download
+CT_analysis_pretrial_clean_1obs$still_in_jail <- as.numeric(CT_analysis_pretrial_clean_1obs$pretrial_download_date == most_recent_pretrial_download_date)
+CT_analysis_pretrial_clean_1obs <- CT_analysis_pretrial_clean_1obs %>% 
+   group_by(identifier, pretrial_latest_admission_date) %>%
+   mutate(still_in_jail = max(still_in_jail),
+          latest_pretrial_download_date = max(pretrial_download_date))
+
+#now just get one observation per charge. note that this takes the bond amount on the last day the person was in pretrial detention as their bond amount - for some observations this changes throughout the dataset. however the most recent observation is likely the most accurate one.
+CT_analysis_pretrial_clean_1obs <- CT_analysis_pretrial_clean_1obs %>% 
+  arrange(pretrial_download_date) %>% 
+  group_by(identifier, pretrial_latest_admission_date, offense) %>% 
+  slice(1) %>% 
+  dplyr::rename(earliest_pretrial_download_date = pretrial_download_date)
+
+#add column with number of times each identifier is in dataset. note that some people have multiple observations because they were either:
+  #arrested for multiple offenses at the same time
+  #arrested different times for different offenses
+CT_analysis_pretrial_clean_1obs <- CT_analysis_pretrial_clean_1obs %>% 
+  group_by(identifier) %>% 
+  mutate(number_pretrial_detention_charges = n())
+```
+
+```{r get one observation per charge for the sentencing dataset}
+#Create new df that will have only one observation per charge
+CT_analysis_sentenced_clean_1obs <- CT_analysis_sentenced_clean
+
+#people appear in the dataset each time the data is downloaded. this code keeps only the most recent download date for each individual charge
+CT_analysis_sentenced_clean_1obs1 <- CT_analysis_sentenced_clean_1obs %>% 
+  arrange(sentenced_download_date) %>% 
+  group_by(identifier, sentenced_latest_admission_date, offense) %>% 
+  
+  
+
+
+
+
+
+#add column with number of times each identifier is in dataset. note that some people have multiple observations because they were either:
+CT_analysis_sentenced_clean_1obs <- CT_analysis_sentenced_clean_1obs %>% 
+  group_by(identifier) %>% 
+  mutate(number_convictions = n())
+
+
+```
+
+
+
+
+
+
+```{r merge dfs}
+#get to one row per person/offense 
+CT_analysis_pretrial_clean %>% 
+  select(identifier, offense, pretrial_latest_admission_date, bond_amount, gender, race) %>% 
+  unique() %>% 
+  nrow()
+
+nrow(CT_analysis_pretrial_clean)
+
+
+CT_analysis_merged <- full_join(CT_analysis_pretrial_clean, CT_analysis_sentenced_clean, by = c("identifier", "offense"))
+
+```
+
