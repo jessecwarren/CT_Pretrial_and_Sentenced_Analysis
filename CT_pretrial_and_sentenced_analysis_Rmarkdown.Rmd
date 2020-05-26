@@ -24,6 +24,9 @@ library(viridis)
 library(hexbin)
 library(sandwich)
 library(stargazer)
+library(lubridate)
+library(stringdist)
+
 
 library(sf)
 library(ggpubr)
@@ -126,8 +129,8 @@ CT_analysis_sentenced_clean <- CT_analysis_sentenced_raw
 ##DELETE LATER##
 
 #only get first x rows of each
-CT_analysis_pretrial_clean <- tail(CT_analysis_pretrial_raw, 120000)
-CT_analysis_sentenced_clean <- head(CT_analysis_sentenced_raw, 120000)
+CT_analysis_pretrial_clean <- head(CT_analysis_pretrial_raw, 220000)
+CT_analysis_sentenced_clean <- head(CT_analysis_sentenced_raw, 220000)
 
 ```
 
@@ -155,27 +158,32 @@ CT_analysis_sentenced_clean <- CT_analysis_sentenced_clean %>%
 #Create new df that will have only one observation per charge
 CT_analysis_pretrial_clean_1obs <- CT_analysis_pretrial_clean
 
+#remove excess whitespace in offense variable
+CT_analysis_pretrial_clean_1obs <- CT_analysis_pretrial_clean_1obs %>% 
+  mutate(offense = str_squish(offense))
+
 #Make a new variable for length of time in jail for person-admission
 CT_analysis_pretrial_clean_1obs <- CT_analysis_pretrial_clean_1obs %>% 
    group_by(identifier, pretrial_latest_admission_date) %>%
    mutate(pretrial_detention_length = n())
 
-#Generate indicator for date being most recent download date take max by person-admission
-most_recent_pretrial_download_date <- max(CT_analysis_pretrial_clean_1obs$pretrial_download_date)
+#Generate indicators for date being 1)most recent download date, 2)earliest possible download date
+most_recent_pretrial_download_date_in_dataset <- max(CT_analysis_pretrial_clean_1obs$pretrial_download_date)
+earliest_pretrial_download_date_in_dataset <- min(CT_analysis_pretrial_clean_1obs$pretrial_download_date)
 
 #this checks and sees if their pretrial download date is the most recent one available, indicating they are still in jail. max.still_in_jail tells is 1 if they are still in jail as of this data download
-CT_analysis_pretrial_clean_1obs$still_in_jail <- as.numeric(CT_analysis_pretrial_clean_1obs$pretrial_download_date == most_recent_pretrial_download_date)
+CT_analysis_pretrial_clean_1obs$still_in_jail <- as.numeric(CT_analysis_pretrial_clean_1obs$pretrial_download_date == most_recent_pretrial_download_date_in_dataset)
 CT_analysis_pretrial_clean_1obs <- CT_analysis_pretrial_clean_1obs %>% 
    group_by(identifier, pretrial_latest_admission_date) %>%
    mutate(still_in_jail = max(still_in_jail),
-          latest_pretrial_download_date = max(pretrial_download_date))
+          earliest_pretrial_download_date = min(pretrial_download_date))
 
 #now just get one observation per charge. note that this takes the bond amount on the last day the person was in pretrial detention as their bond amount - for some observations this changes throughout the dataset. however the most recent observation is likely the most accurate one.
 CT_analysis_pretrial_clean_1obs <- CT_analysis_pretrial_clean_1obs %>% 
-  arrange(pretrial_download_date) %>% 
+  arrange(desc(pretrial_download_date)) %>% 
   group_by(identifier, pretrial_latest_admission_date, offense) %>% 
   slice(1) %>% 
-  dplyr::rename(earliest_pretrial_download_date = pretrial_download_date)
+  dplyr::rename(latest_pretrial_download_date = pretrial_download_date)
 
 #add column with number of times each identifier is in dataset. note that some people have multiple observations because they were either:
   #arrested for multiple offenses at the same time
@@ -183,47 +191,80 @@ CT_analysis_pretrial_clean_1obs <- CT_analysis_pretrial_clean_1obs %>%
 CT_analysis_pretrial_clean_1obs <- CT_analysis_pretrial_clean_1obs %>% 
   group_by(identifier) %>% 
   mutate(number_pretrial_detention_charges = n())
+
+#exclude people who exit the dataset in the first 60 days of recorded data (what should be the max time in pretrial detention). we dont observe their entire time in dataset at beginning, as they might have been in pretrial detention before data started being collected
+test <- CT_analysis_pretrial_clean_1obs %>% 
+  filter(latest_pretrial_download_date > (60 + earliest_pretrial_download_date_in_dataset))
+
+
+nrow(CT_analysis_pretrial_clean_1obs)
+nrow(test)
 ```
 
 ```{r get one observation per charge for the sentencing dataset}
 #Create new df that will have only one observation per charge
 CT_analysis_sentenced_clean_1obs <- CT_analysis_sentenced_clean
 
-#people appear in the dataset each time the data is downloaded. this code keeps only the most recent download date for each individual charge
-CT_analysis_sentenced_clean_1obs1 <- CT_analysis_sentenced_clean_1obs %>% 
-  arrange(sentenced_download_date) %>% 
+#add indicator if person has life sentence (which is noted as a sentence length of 368897 in the dataset). for people with life sentences put 2100-01-01 for all end_sentence_dates 
+CT_analysis_sentenced_clean_1obs <- CT_analysis_sentenced_clean_1obs %>% 
+  mutate(life_sentence = ifelse(sentence_days == 368897, 1, 0)) %>% 
+  mutate(end_sentence_date = case_when(sentence_days == 368897 ~ ymd("2100-01-01"),
+                                       TRUE ~ end_sentence_date))
+
+#trim whitespace from offense names
+CT_analysis_sentenced_clean_1obs <- CT_analysis_sentenced_clean_1obs %>% 
+  mutate(offense = str_squish(offense))
+
+#add earliest date each individual persons charge appears in the dataset
+CT_analysis_sentenced_clean_1obs <- CT_analysis_sentenced_clean_1obs %>% 
+  group_by(identifier, sentenced_latest_admission_date, offense) %>%
+  mutate(earliest_sentenced_download_date = min(sentenced_download_date))
+
+#people appear in the dataset each time the data is downloaded. this code keeps only the most recent download date for each individual charge (so people can appear multiple times if they have multiple different offenses admitted on different days)
+CT_analysis_sentenced_clean_1obs <- CT_analysis_sentenced_clean_1obs %>% 
+  arrange(desc(sentenced_download_date)) %>% 
   group_by(identifier, sentenced_latest_admission_date, offense) %>% 
+  slice(1) %>% 
+  dplyr::rename(latest_sentenced_download_date = sentenced_download_date)
   
-  
-
-
-
-
-
 #add column with number of times each identifier is in dataset. note that some people have multiple observations because they were either:
 CT_analysis_sentenced_clean_1obs <- CT_analysis_sentenced_clean_1obs %>% 
   group_by(identifier) %>% 
   mutate(number_convictions = n())
 
+#filter out people with na's for end_sentence_date, which likely indicates errors in their sentence_days as well
+CT_analysis_sentenced_clean_1obs <- CT_analysis_sentenced_clean_1obs %>% 
+  filter(!is.na(end_sentence_date))
 
 ```
 
 
 
-
-
-
 ```{r merge dfs}
-#get to one row per person/offense 
-CT_analysis_pretrial_clean %>% 
-  select(identifier, offense, pretrial_latest_admission_date, bond_amount, gender, race) %>% 
-  unique() %>% 
-  nrow()
-
-nrow(CT_analysis_pretrial_clean)
+#merge dfs
+CT_analysis_merged <- full_join(CT_analysis_pretrial_clean_1obs, CT_analysis_sentenced_clean_1obs, by = c("identifier", "pretrial_latest_admission_date" = "sentenced_latest_admission_date"))
 
 
-CT_analysis_merged <- full_join(CT_analysis_pretrial_clean, CT_analysis_sentenced_clean, by = c("identifier", "offense"))
+nrow(CT_analysis_pretrial_clean_1obs)
+nrow(CT_analysis_sentenced_clean_1obs)
+nrow(CT_analysis_merged)
+
+#view df to compare offenses, dates, compute string distance between offenses
+test <- CT_analysis_merged %>% 
+  filter(!is.na(offense.y)) %>% 
+  select(identifier, offense.x, offense.y, latest_pretrial_download_date, earliest_pretrial_download_date) %>% 
+  mutate(pretrial_to_sentence_difference = latest_pretrial_download_date - earliest_pretrial_download_date) %>% 
+  mutate(string_dist = stringdist(offense.x, offense.y))
+
+ggplot(test, aes(x = string_dist, y = pretrial_to_sentence_difference)) +
+  geom_point(size = .1)
+
+ggplot(test, aes(x = string_dist)) +
+  geom_histogram()
+
+ggplot(test, aes(x = pretrial_to_sentence_difference)) +
+  geom_histogram()
+
 
 ```
 
