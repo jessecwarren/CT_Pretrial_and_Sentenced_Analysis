@@ -26,11 +26,12 @@ library(sandwich)
 library(stargazer)
 library(lubridate)
 library(stringdist)
-
-
-library(sf)
-library(ggpubr)
 library(scales)
+library(cluster)    
+library(factoextra)
+
+
+
 options(scipen=999)
 ```
 
@@ -129,8 +130,11 @@ CT_analysis_sentenced_clean <- CT_analysis_sentenced_raw
 ##DELETE LATER##
 
 #only get first x rows of each
-CT_analysis_pretrial_clean <- head(CT_analysis_pretrial_raw, 220000)
-CT_analysis_sentenced_clean <- head(CT_analysis_sentenced_raw, 220000)
+# CT_analysis_pretrial_clean <- head(CT_analysis_pretrial_raw, 220000)
+#CT_analysis_sentenced_clean <- head(CT_analysis_sentenced_raw, 220000)
+
+CT_analysis_pretrial_clean <- CT_analysis_pretrial_raw
+CT_analysis_sentenced_clean <- CT_analysis_sentenced_raw
 
 ```
 
@@ -227,7 +231,7 @@ CT_analysis_sentenced_clean_1obs <- CT_analysis_sentenced_clean_1obs %>%
   slice(1) %>% 
   dplyr::rename(latest_sentenced_download_date = sentenced_download_date)
   
-#add column with number of times each identifier is in dataset. note that some people have multiple observations because they were either:
+#add column with number of times each identifier is in dataset.
 CT_analysis_sentenced_clean_1obs <- CT_analysis_sentenced_clean_1obs %>% 
   group_by(identifier) %>% 
   mutate(number_convictions = n())
@@ -241,6 +245,14 @@ CT_analysis_sentenced_clean_1obs <- CT_analysis_sentenced_clean_1obs %>%
 
 
 ```{r merge dfs}
+#merging these two datasets is difficult for a number of reasons. The two options for joining are to join based on offense, or based on latest_admission date. Issues are noted below:
+ #1. Joining on offense: peoples offense may change from what it is recorded as during pretrial to what they are actually sentenced with, as they may take a plea bargain or the prosecutor may change the sentence before trial.
+ #2. Joining on latest_admission_date : we can try to join based on the "latest_admission_date" field found in each df, but its unclear how well this field corresponds to each individual arrest, and whether it is updated each time someone enteres the dataset a second time for a new offense. Thus, joining on this means that people may be joined on a different charge than the one they actually were arrested/sentenced for.
+
+#We can use two measures to determine how well the joins went:
+  #1. The string distance between the pretrial and sentenced offense. Most joins should have a string distance of 0, but for those that don't, the string distance in many cases should be fairly small (ie the difference between "ASSAULT, FIRST DEGREE DF" and "ASSAULT, SECOND DEGREE DF")
+ #2. The length of time between the last date they showed up in the pretrial dataset, and the earliest time they appear in the sentenced download date. For most people, this length of time shouldnt be too long, as most people take plea deals and thus the pretrial -> sentencing process is fairly quick.
+
 #merge dfs
 CT_analysis_merged <- full_join(CT_analysis_pretrial_clean_1obs, CT_analysis_sentenced_clean_1obs, by = c("identifier", "pretrial_latest_admission_date" = "sentenced_latest_admission_date"))
 
@@ -249,22 +261,128 @@ nrow(CT_analysis_pretrial_clean_1obs)
 nrow(CT_analysis_sentenced_clean_1obs)
 nrow(CT_analysis_merged)
 
-#view df to compare offenses, dates, compute string distance between offenses
-test <- CT_analysis_merged %>% 
-  filter(!is.na(offense.y)) %>% 
-  select(identifier, offense.x, offense.y, latest_pretrial_download_date, earliest_pretrial_download_date) %>% 
-  mutate(pretrial_to_sentence_difference = latest_pretrial_download_date - earliest_pretrial_download_date) %>% 
+#Create columns to compare dates, compute string distance between offenses
+CT_analysis_merged <- CT_analysis_merged %>% 
+  mutate(pretrial_to_sentence_difference = earliest_sentenced_download_date - latest_pretrial_download_date) %>% 
   mutate(string_dist = stringdist(offense.x, offense.y))
 
-ggplot(test, aes(x = string_dist, y = pretrial_to_sentence_difference)) +
-  geom_point(size = .1)
+CT_analysis_merged %>% 
+  filter(!is.na(offense.y)) %>% 
+  ggplot(aes(x = string_dist, y = pretrial_to_sentence_difference)) +
+    geom_point(size = .1)
 
-ggplot(test, aes(x = string_dist)) +
+CT_analysis_merged %>% 
+  filter(!is.na(offense.y)) %>% 
+  ggplot(aes(x = string_dist)) +
   geom_histogram()
 
-ggplot(test, aes(x = pretrial_to_sentence_difference)) +
-  geom_histogram()
+CT_analysis_merged %>% 
+  filter(!is.na(offense.y)) %>% 
+  ggplot(aes(x = pretrial_to_sentence_difference)) +
+    geom_histogram()
 
+
+
+```
+
+```{r prepare merged data for cluster analysis}
+#clean up names
+CT_analysis_merged_cleaned <- CT_analysis_merged %>% 
+  dplyr::rename(pretrial_offense = offense.x,
+                sentenced_offense = offense.y)
+
+#filter out people with negative pretrial_to_sentence_difference, which is likely due to an error in joins
+CT_analysis_merged_cleaned <- CT_analysis_merged_cleaned %>% 
+  filter(pretrial_to_sentence_difference >= 0 | is.na(pretrial_to_sentence_difference))
+
+#filter out longer string distances, which is also likely an error in joins
+CT_analysis_merged_cleaned <- CT_analysis_merged_cleaned %>% 
+  filter(string_dist <= 15 | is.na(string_dist))
+
+#create 0/1 indicator of whether someone in the pretrial detention data appears in the sentenced data for that offense
+CT_analysis_merged_cleaned <- CT_analysis_merged_cleaned %>% 
+  mutate(sentenced = ifelse(!is.na(sentenced_offense), 1, 0))
+
+#replace people who werent sentenced, who have NA sentenced_days with 0's
+CT_analysis_merged_cleaned <- CT_analysis_merged_cleaned %>% 
+  mutate(sentence_days = replace(sentence_days, is.na(sentence_days), 0))
+
+#filter out people not in pretrial detention dataset
+CT_analysis_merged_cleaned <- CT_analysis_merged_cleaned %>% 
+  filter(!is.na(pretrial_detention_length))
+```
+
+```{r Dafeng example cluster analysis}
+#Dafeng sample code to use as example - DELETE THIS WHOLE CHUNK LATER
+library(rworldmap)
+labour <- readxl::read_xlsx("C:/Users/Jesses_PC/Documents/DataScience/Misc/Misc_datasets/labour.xlsx")
+
+world = getMap(resolution = "low")
+plot(world, xlim = c(-180, 180), ylim = c(-90, 90), asp = 1)
+points(labour$longitude, labour$latitude, col = "red", cex = .6)
+points(labour$longitude, labour$latitude, col = "red", cex = 1)
+
+
+long = labour$longitude
+lat = labour$latitude
+coordinate = cbind(long, lat)
+city = labour$city
+rownames(coordinate) = labour$city
+
+k5 = kmeans(coordinate, centers = 5)
+k5
+
+fviz_cluster(k5, data = coordinate)
+
+
+crime <- readxl::read_xlsx("C:/Users/Jesses_PC/Documents/DataScience/Misc/Misc_datasets/crime.xlsx")
+
+crime_cluster = crime
+crime_cluster$State = NULL
+rownames(crime_cluster) = crime$State
+
+k3 = kmeans(crime_cluster, centers = 3)
+fviz_cluster(k3, data = crime_cluster)
+
+k2 = kmeans(crime_cluster, centers = 2)
+fviz_cluster(k2, data = crime_cluster)
+
+crime_summary2 = cbind(crime_cluster, k2$cluster)
+crime_summary2
+
+
+crime_cluster_copy = crime_cluster
+crime_cluster_copy$Assault = crime_cluster_copy$Assault/100
+crime_cluster_copy$UrbanPopulation = crime_cluster_copy$UrbanPopulation/100
+
+k2_copy = kmeans(crime_cluster_copy, centers = 2)
+fviz_cluster(k2_copy, data = crime_cluster_copy)
+
+k3_copy = kmeans(crime_cluster_copy, centers = 3)
+fviz_cluster(k3_copy, data = crime_cluster_copy)
+
+
+fviz_nbclust(crime_cluster, kmeans, method = "silhouette")
+fviz_nbclust(coordinate, kmeans, method = "silhouette")
+k3 = kmeans(coordinate, centers = 3)
+fviz_cluster(k3, data = coordinate)
+```
+
+```{r cluster analysis}
+#create new df to manipulate just for cluster analysis
+CT_analysis_merged_cleaned_cluster <- CT_analysis_merged_cleaned
+
+#create unique identifier variables for each charge
+CT_analysis_merged_cleaned_cluster$identifier <- NULL
+rownames(CT_analysis_merged_cleaned_cluster) <- CT_analysis_merged_cleaned$identifier
+
+
+k1 <- kmeans(CT_analysis_merged_cleaned_cluster[, c("sentence_days", "sentenced", "pretrial_detention_length")], centers = 5)
+fviz_cluster(k1, data = CT_analysis_merged_cleaned_cluster[, c("sentence_days", "sentenced", "pretrial_detention_length")])
+
+```
+
+```{r OLS regression analysis}
 
 ```
 
