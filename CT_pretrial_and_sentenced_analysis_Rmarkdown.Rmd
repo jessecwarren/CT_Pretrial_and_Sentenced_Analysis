@@ -211,7 +211,8 @@ CT_analysis_sentenced_clean_1obs <- CT_analysis_sentenced_clean
 
 #add indicator if person has life sentence (which is noted as a sentence length of 368897 in the dataset). for people with life sentences put 2100-01-01 for all end_sentence_dates 
 CT_analysis_sentenced_clean_1obs <- CT_analysis_sentenced_clean_1obs %>% 
-  mutate(life_sentence = ifelse(sentence_days == 368897, 1, 0)) %>% 
+  mutate(life_sentence = case_when(sentence_days <= 368897 ~ 1,
+                                   TRUE ~ 0)) %>% 
   mutate(end_sentence_date = case_when(sentence_days == 368897 ~ ymd("2100-01-01"),
                                        TRUE ~ end_sentence_date))
 
@@ -285,7 +286,7 @@ CT_analysis_merged %>%
 
 ```
 
-```{r prepare merged data for cluster analysis}
+```{r prepare merged data for analysis}
 #clean up names
 CT_analysis_merged_cleaned <- CT_analysis_merged %>% 
   dplyr::rename(pretrial_offense = offense.x,
@@ -310,7 +311,28 @@ CT_analysis_merged_cleaned <- CT_analysis_merged_cleaned %>%
 #filter out people not in pretrial detention dataset
 CT_analysis_merged_cleaned <- CT_analysis_merged_cleaned %>% 
   filter(!is.na(pretrial_detention_length))
+
+#give 0s to people with nas for life sentence
+CT_analysis_merged_cleaned <- CT_analysis_merged_cleaned %>% 
+  mutate(life_sentence = replace(life_sentence, is.na(life_sentence), 0))
 ```
+
+```{r visualize merged and cleaned dataset}
+
+CT_analysis_merged_cleaned %>% 
+  ggplot(aes(x = sentence_days, y = pretrial_detention_length)) +
+    geom_point()
+
+
+test <- CT_analysis_merged_cleaned %>% 
+  ungroup() %>% 
+  select(sentence_days) %>% 
+  arrange(-sentence_days)
+
+test[1]
+```
+
+
 
 ```{r Dafeng example cluster analysis}
 #Dafeng sample code to use as example - DELETE THIS WHOLE CHUNK LATER
@@ -369,20 +391,43 @@ fviz_cluster(k3, data = coordinate)
 ```
 
 ```{r cluster analysis}
-#create new df to manipulate just for cluster analysis
-CT_analysis_merged_cleaned_cluster <- CT_analysis_merged_cleaned
-
 #create unique identifier variables for each charge
-CT_analysis_merged_cleaned_cluster$identifier <- NULL
-rownames(CT_analysis_merged_cleaned_cluster) <- CT_analysis_merged_cleaned$identifier
+# CT_analysis_merged_cleaned_cluster$identifier <- NULL
+# rownames(CT_analysis_merged_cleaned_cluster) <- CT_analysis_merged_cleaned$identifier
 
+#conduct cluster analysis, excluding those with life sentences
+CT_analysis_merged_cleaned_cluster <- CT_analysis_merged_cleaned %>% 
+  ungroup() %>% 
+  filter(life_sentence == 0) %>% 
+  select(sentence_days, pretrial_detention_length, sentenced)
 
-k1 <- kmeans(CT_analysis_merged_cleaned_cluster[, c("sentence_days", "sentenced", "pretrial_detention_length")], centers = 5)
-fviz_cluster(k1, data = CT_analysis_merged_cleaned_cluster[, c("sentence_days", "sentenced", "pretrial_detention_length")])
+k1 <- kmeans(CT_analysis_merged_cleaned_cluster, centers = 3)
+
+fviz_cluster(k1, data = CT_analysis_merged_cleaned_cluster)
 
 ```
 
 ```{r OLS regression analysis}
 
+#run regression with sentenced as dependent variable
+lm1 <- CT_analysis_merged_cleaned %>% 
+  lm(sentenced ~ race.x +
+                 as.factor(pretrial_offense) +
+                 gender.x +
+                 bond_amount +
+                 pretrial_detention_length,
+     data = .)
+
+logit1 <- CT_analysis_merged_cleaned %>% 
+  glm(sentenced ~ race.x +
+                 as.factor(pretrial_offense) +
+                 gender.x +
+                 bond_amount +
+                 pretrial_detention_length,
+     family = "binomial",
+     data = .)
+
+summary(lm1)
+summary(logit1)
 ```
 
