@@ -45,12 +45,12 @@ options(scipen=999)
 
 #option 1.
 #load pretrial data from Connecticut open data site  
-CT_analysis_pretrial_data_URL <- "https://data.ct.gov/Public-Safety/Accused-Pre-Trial-Inmates-in-Correctional-Faciliti/b674-jy6w"
+pretrial_data_URL <- "https://data.ct.gov/Public-Safety/Accused-Pre-Trial-Inmates-in-Correctional-Faciliti/b674-jy6w"
 #CT__analysis_pretrial_raw <- read.socrata((CT_pretrial_data_URL))
 
 #option 2.
 #load from local file, in Data/ folder
-CT_analysis_pretrial_raw <- fread("Data/Accused_Pre-Trial_Inmates_in_Correctional_Facilities.csv")
+pretrial_raw <- fread("Data/Accused_Pre-Trial_Inmates_in_Correctional_Facilities.csv")
 
 #create fix race names function
 fix_race_names_function <- function(df) {
@@ -63,10 +63,10 @@ fix_race_names_function <- function(df) {
 }
 
 #fix race names
-CT_analysis_pretrial_raw <- fix_race_names_function(CT_analysis_pretrial_raw)
+pretrial_raw <- fix_race_names_function(pretrial_raw)
 
 #clean names, set variable types, fix dates
-CT_analysis_pretrial_raw <- CT_analysis_pretrial_raw %>% 
+pretrial_raw <- pretrial_raw %>% 
   clean_names() %>% 
   mutate(identifier = as.character(identifier),
          race = as.factor(race),
@@ -83,7 +83,7 @@ CT_analysis_pretrial_raw <- CT_analysis_pretrial_raw %>%
          pretrial_download_date = download_date, 
          pretrial_latest_admission_date = latest_admission_date)
 
-CT_analysis_pretrial_clean <- CT_analysis_pretrial_raw
+pretrial_clean <- pretrial_raw
 ```
 
 ```{r load sentenced data}
@@ -93,18 +93,18 @@ CT_analysis_pretrial_clean <- CT_analysis_pretrial_raw
 
 #option 1.
 #load pretrial data from Connecticut open data site  
-CT_analysis_sentenced_data_URL <- "https://data.ct.gov/Public-Safety/Sentenced-Inmates-in-Correctional-Facilities/um73-fxm4"
-#CT_analysis_sentenced_raw <- read.socrata((CT_sentenced_data_URL))
+sentenced_data_URL <- "https://data.ct.gov/Public-Safety/Sentenced-Inmates-in-Correctional-Facilities/um73-fxm4"
+#sentenced_raw <- read.socrata((CT_sentenced_data_URL))
 
 #option 2.
 #load from local file, in Data/ folder
-CT_analysis_sentenced_raw <- fread("Data/Sentenced_Inmates_in_Correctional_Facilities.csv")
+sentenced_raw <- fread("Data/Sentenced_Inmates_in_Correctional_Facilities.csv")
 
 #fix race names
-CT_analysis_sentenced_raw <- fix_race_names_function(CT_analysis_sentenced_raw)
+sentenced_raw <- fix_race_names_function(sentenced_raw)
 
 #clean names, set variable types, fix dates
-CT_analysis_sentenced_raw <- CT_analysis_sentenced_raw %>% 
+sentenced_raw <- sentenced_raw %>% 
   clean_names() %>% 
   mutate(identifier = as.character(identifier),
          race = as.factor(race),
@@ -123,67 +123,67 @@ CT_analysis_sentenced_raw <- CT_analysis_sentenced_raw %>%
          sentenced_download_date = download_date,
          sentenced_latest_admission_date = latest_admission_date)
 
-CT_analysis_sentenced_clean <- CT_analysis_sentenced_raw
+sentenced_clean <- sentenced_raw
 ```
 
 ```{r create smaller dataframes to work with to test and DELETE LATER}
 ##DELETE LATER##
 
 #only get first x rows of each
-# CT_analysis_pretrial_clean <- head(CT_analysis_pretrial_raw, 220000)
-#CT_analysis_sentenced_clean <- head(CT_analysis_sentenced_raw, 220000)
+#pretrial_clean <- head(pretrial_raw, 220000)
+#sentenced_clean <- head(sentenced_raw, 220000)
 
-CT_analysis_pretrial_clean <- CT_analysis_pretrial_raw
-CT_analysis_sentenced_clean <- CT_analysis_sentenced_raw
+pretrial_clean <- pretrial_raw
+sentenced_clean <- sentenced_raw
 
 ```
 
 ```{r remove inconsistently coded race and gender observations}
 #create dfs of unique people
-CT_analysis_pretrial_people <- unique(CT_analysis_pretrial_clean[,c("identifier", "race", "gender")])
-CT_analysis_sentenced_people <- unique(CT_analysis_sentenced_clean[,c("identifier", "race", "gender")])
+pretrial_people <- unique(pretrial_clean[,c("identifier", "race", "gender")])
+sentenced_people <- unique(sentenced_clean[,c("identifier", "race", "gender")])
 
 #get difference between number of unique people, and number of unique people by race and gender as well to see if some people are being coded multiple times as different races/genders
-nrow(CT_analysis_pretrial_people) - length(unique(CT_analysis_pretrial_clean[,"identifier"])) 
-nrow(CT_analysis_sentenced_people) - length(unique(CT_analysis_sentenced_clean[,"identifier"])) 
+nrow(pretrial_people) - length(unique(pretrial_clean[,"identifier"])) 
+nrow(sentenced_people) - length(unique(sentenced_clean[,"identifier"])) 
 
 
-#exclude the people coded with different race and/or genders
-exclude_inconsistent_people_vec <- CT_analysis_pretrial_people$identifier[duplicated(CT_analysis_pretrial_people$identifier)]
-exclude_inconsistent_people_vec <- append(exclude_inconsistent_people_vec, CT_analysis_sentenced_people$identifier[duplicated(CT_analysis_sentenced_people$identifier)])
+#exclude the people coded with different race and/or genders from both pretrial and sentenced dfs
+exclude_inconsistent_people_vec <- pretrial_people$identifier[duplicated(pretrial_people$identifier)]
+exclude_inconsistent_people_vec <- append(exclude_inconsistent_people_vec, sentenced_people$identifier[duplicated(sentenced_people$identifier)])
 
-CT_analysis_pretrial_clean <- CT_analysis_pretrial_clean %>% 
+pretrial_clean <- pretrial_clean %>% 
   filter(!identifier %in% exclude_inconsistent_people_vec)
-CT_analysis_sentenced_clean <- CT_analysis_sentenced_clean %>% 
+sentenced_clean <- sentenced_clean %>% 
   filter(!identifier %in% exclude_inconsistent_people_vec)
 ```
 
 ```{r get one observation per charge for the pretrial detention dataset}
 #Create new df that will have only one observation per charge
-CT_analysis_pretrial_clean_1obs <- CT_analysis_pretrial_clean
+pretrial_clean_1charge <- pretrial_clean
 
 #remove excess whitespace in offense variable
-CT_analysis_pretrial_clean_1obs <- CT_analysis_pretrial_clean_1obs %>% 
+pretrial_clean_1charge <- pretrial_clean_1charge %>% 
   mutate(offense = str_squish(offense))
 
 #Make a new variable for length of time in jail for person-admission
-CT_analysis_pretrial_clean_1obs <- CT_analysis_pretrial_clean_1obs %>% 
+pretrial_clean_1charge <- pretrial_clean_1charge %>% 
    group_by(identifier, pretrial_latest_admission_date) %>%
    mutate(pretrial_detention_length = n())
 
 #Generate indicators for date being 1)most recent download date, 2)earliest possible download date
-most_recent_pretrial_download_date_in_dataset <- max(CT_analysis_pretrial_clean_1obs$pretrial_download_date)
-earliest_pretrial_download_date_in_dataset <- min(CT_analysis_pretrial_clean_1obs$pretrial_download_date)
+most_recent_pretrial_download_date_in_dataset <- max(pretrial_clean_1charge$pretrial_download_date)
+earliest_pretrial_download_date_in_dataset <- min(pretrial_clean_1charge$pretrial_download_date)
 
 #this checks and sees if their pretrial download date is the most recent one available, indicating they are still in jail. max.still_in_jail tells is 1 if they are still in jail as of this data download
-CT_analysis_pretrial_clean_1obs$still_in_jail <- as.numeric(CT_analysis_pretrial_clean_1obs$pretrial_download_date == most_recent_pretrial_download_date_in_dataset)
-CT_analysis_pretrial_clean_1obs <- CT_analysis_pretrial_clean_1obs %>% 
+pretrial_clean_1charge$still_in_jail <- as.numeric(pretrial_clean_1charge$pretrial_download_date == most_recent_pretrial_download_date_in_dataset)
+pretrial_clean_1charge <- pretrial_clean_1charge %>% 
    group_by(identifier, pretrial_latest_admission_date) %>%
    mutate(still_in_jail = max(still_in_jail),
           earliest_pretrial_download_date = min(pretrial_download_date))
 
 #now just get one observation per charge. note that this takes the bond amount on the last day the person was in pretrial detention as their bond amount - for some observations this changes throughout the dataset. however the most recent observation is likely the most accurate one.
-CT_analysis_pretrial_clean_1obs <- CT_analysis_pretrial_clean_1obs %>% 
+pretrial_clean_1charge <- pretrial_clean_1charge %>% 
   arrange(desc(pretrial_download_date)) %>% 
   group_by(identifier, pretrial_latest_admission_date, offense) %>% 
   slice(1) %>% 
@@ -192,55 +192,66 @@ CT_analysis_pretrial_clean_1obs <- CT_analysis_pretrial_clean_1obs %>%
 #add column with number of times each identifier is in dataset. note that some people have multiple observations because they were either:
   #arrested for multiple offenses at the same time
   #arrested different times for different offenses
-CT_analysis_pretrial_clean_1obs <- CT_analysis_pretrial_clean_1obs %>% 
+pretrial_clean_1charge <- pretrial_clean_1charge %>% 
   group_by(identifier) %>% 
   mutate(number_pretrial_detention_charges = n())
 
 #exclude people who exit the dataset in the first 60 days of recorded data (what should be the max time in pretrial detention). we dont observe their entire time in dataset at beginning, as they might have been in pretrial detention before data started being collected
-test <- CT_analysis_pretrial_clean_1obs %>% 
+pretrial_clean_1charge <- pretrial_clean_1charge %>% 
   filter(latest_pretrial_download_date > (60 + earliest_pretrial_download_date_in_dataset))
 
-
-nrow(CT_analysis_pretrial_clean_1obs)
-nrow(test)
 ```
 
 ```{r get one observation per charge for the sentencing dataset}
 #Create new df that will have only one observation per charge
-CT_analysis_sentenced_clean_1obs <- CT_analysis_sentenced_clean
+sentenced_clean_1charge <- sentenced_clean
 
 #add indicator if person has life sentence (which is noted as a sentence length of 368897 in the dataset). for people with life sentences put 2100-01-01 for all end_sentence_dates 
-CT_analysis_sentenced_clean_1obs <- CT_analysis_sentenced_clean_1obs %>% 
-  mutate(life_sentence = case_when(sentence_days <= 368897 ~ 1,
+sentenced_clean_1charge <- sentenced_clean_1charge %>% 
+  mutate(life_sentence = case_when(sentence_days >= 368897 ~ 1,
                                    TRUE ~ 0)) %>% 
-  mutate(end_sentence_date = case_when(sentence_days == 368897 ~ ymd("2100-01-01"),
+  mutate(end_sentence_date = case_when(sentence_days >= 368897 ~ ymd("2100-01-01"),
                                        TRUE ~ end_sentence_date))
 
-#trim whitespace from offense names
-CT_analysis_sentenced_clean_1obs <- CT_analysis_sentenced_clean_1obs %>% 
+#remove excess whitespace in offense variable
+sentenced_clean_1charge <- sentenced_clean_1charge %>% 
   mutate(offense = str_squish(offense))
 
+#check how close pretrial and offense variables line up, how many are in both datasets
+sentenced_offense <- sentenced_clean_1charge$offense %>%
+  unique() %>%
+  as.data.frame() %>%
+  dplyr::rename(offense = ".")
+pretrial_offense <- pretrial_clean_1charge$offense %>%
+  unique() %>%
+  as.data.frame() %>%
+  dplyr::rename(offense = ".")
+
+#get number of offenses that only appear in one df, but not the other. most appear to be fairly rare crimes, and in general the offenses match up well
+anti_join(pretrial_offense, sentenced_offense, by = "offense") %>%
+  nrow()
+
+
 #add earliest date each individual persons charge appears in the dataset
-CT_analysis_sentenced_clean_1obs <- CT_analysis_sentenced_clean_1obs %>% 
+sentenced_clean_1charge <- sentenced_clean_1charge %>% 
   group_by(identifier, sentenced_latest_admission_date, offense) %>%
   mutate(earliest_sentenced_download_date = min(sentenced_download_date))
 
 #people appear in the dataset each time the data is downloaded. this code keeps only the most recent download date for each individual charge (so people can appear multiple times if they have multiple different offenses admitted on different days)
-CT_analysis_sentenced_clean_1obs <- CT_analysis_sentenced_clean_1obs %>% 
+sentenced_clean_1charge <- sentenced_clean_1charge %>% 
   arrange(desc(sentenced_download_date)) %>% 
   group_by(identifier, sentenced_latest_admission_date, offense) %>% 
   slice(1) %>% 
   dplyr::rename(latest_sentenced_download_date = sentenced_download_date)
   
 #add column with number of times each identifier is in dataset.
-CT_analysis_sentenced_clean_1obs <- CT_analysis_sentenced_clean_1obs %>% 
+sentenced_clean_1charge <- sentenced_clean_1charge %>% 
   group_by(identifier) %>% 
   mutate(number_convictions = n())
 
-#filter out people with na's for end_sentence_date, which likely indicates errors in their sentence_days as well
-CT_analysis_sentenced_clean_1obs <- CT_analysis_sentenced_clean_1obs %>% 
-  filter(!is.na(end_sentence_date))
-
+#add indicator if still in prison
+most_recent_sentenced_download_date_in_dataset <- max(sentenced_clean_1charge$latest_sentenced_download_date)
+sentenced_clean_1charge$still_in_prison <- as.numeric(sentenced_clean_1charge$latest_sentenced_download_date == most_recent_sentenced_download_date_in_dataset)
 ```
 
 
@@ -255,29 +266,29 @@ CT_analysis_sentenced_clean_1obs <- CT_analysis_sentenced_clean_1obs %>%
  #2. The length of time between the last date they showed up in the pretrial dataset, and the earliest time they appear in the sentenced download date. For most people, this length of time shouldnt be too long, as most people take plea deals and thus the pretrial -> sentencing process is fairly quick.
 
 #merge dfs
-CT_analysis_merged <- full_join(CT_analysis_pretrial_clean_1obs, CT_analysis_sentenced_clean_1obs, by = c("identifier", "pretrial_latest_admission_date" = "sentenced_latest_admission_date"))
+merged <- full_join(pretrial_clean_1charge, sentenced_clean_1charge, by = c("identifier", "pretrial_latest_admission_date" = "sentenced_latest_admission_date"))
 
 
-nrow(CT_analysis_pretrial_clean_1obs)
-nrow(CT_analysis_sentenced_clean_1obs)
-nrow(CT_analysis_merged)
+nrow(pretrial_clean_1charge)
+nrow(sentenced_clean_1charge)
+nrow(merged)
 
 #Create columns to compare dates, compute string distance between offenses
-CT_analysis_merged <- CT_analysis_merged %>% 
+merged <- merged %>% 
   mutate(pretrial_to_sentence_difference = earliest_sentenced_download_date - latest_pretrial_download_date) %>% 
   mutate(string_dist = stringdist(offense.x, offense.y))
 
-CT_analysis_merged %>% 
+merged %>% 
   filter(!is.na(offense.y)) %>% 
   ggplot(aes(x = string_dist, y = pretrial_to_sentence_difference)) +
     geom_point(size = .1)
 
-CT_analysis_merged %>% 
+merged %>% 
   filter(!is.na(offense.y)) %>% 
   ggplot(aes(x = string_dist)) +
   geom_histogram()
 
-CT_analysis_merged %>% 
+merged %>% 
   filter(!is.na(offense.y)) %>% 
   ggplot(aes(x = pretrial_to_sentence_difference)) +
     geom_histogram()
@@ -288,46 +299,53 @@ CT_analysis_merged %>%
 
 ```{r prepare merged data for analysis}
 #clean up names
-CT_analysis_merged_cleaned <- CT_analysis_merged %>% 
+merged_cleaned <- merged %>% 
   dplyr::rename(pretrial_offense = offense.x,
                 sentenced_offense = offense.y)
 
 #filter out people with negative pretrial_to_sentence_difference, which is likely due to an error in joins
-CT_analysis_merged_cleaned <- CT_analysis_merged_cleaned %>% 
+merged_cleaned <- merged_cleaned %>% 
   filter(pretrial_to_sentence_difference >= 0 | is.na(pretrial_to_sentence_difference))
 
 #filter out longer string distances, which is also likely an error in joins
-CT_analysis_merged_cleaned <- CT_analysis_merged_cleaned %>% 
+merged_cleaned <- merged_cleaned %>% 
   filter(string_dist <= 15 | is.na(string_dist))
 
 #create 0/1 indicator of whether someone in the pretrial detention data appears in the sentenced data for that offense
-CT_analysis_merged_cleaned <- CT_analysis_merged_cleaned %>% 
+merged_cleaned <- merged_cleaned %>% 
   mutate(sentenced = ifelse(!is.na(sentenced_offense), 1, 0))
 
 #replace people who werent sentenced, who have NA sentenced_days with 0's
-CT_analysis_merged_cleaned <- CT_analysis_merged_cleaned %>% 
+merged_cleaned <- merged_cleaned %>% 
   mutate(sentence_days = replace(sentence_days, is.na(sentence_days), 0))
 
 #filter out people not in pretrial detention dataset
-CT_analysis_merged_cleaned <- CT_analysis_merged_cleaned %>% 
+merged_cleaned <- merged_cleaned %>% 
   filter(!is.na(pretrial_detention_length))
 
 #give 0s to people with nas for life sentence
-CT_analysis_merged_cleaned <- CT_analysis_merged_cleaned %>% 
+merged_cleaned <- merged_cleaned %>% 
   mutate(life_sentence = replace(life_sentence, is.na(life_sentence), 0))
 ```
 
 ```{r visualize merged and cleaned dataset}
 
-CT_analysis_merged_cleaned %>% 
+#look at relationship between pretrial detention length and sentence days
+merged_cleaned %>% 
+  filter(sentence_days < 5000) %>% 
   ggplot(aes(x = sentence_days, y = pretrial_detention_length)) +
     geom_point()
 
 
-test <- CT_analysis_merged_cleaned %>% 
-  ungroup() %>% 
-  select(sentence_days) %>% 
-  arrange(-sentence_days)
+
+ggplot(data=bd, aes(x=bond_amount, y=dur))+
+  stat_binhex() + scale_fill_viridis(name="n in hex") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0)) +
+  labs(x="Initial Bond Amount ($)", y="Jail Stay (Days)", caption="\nThe plot displays the frequency of bond amount/jail stay combinations with hexagonal bins. (See legend.) \nObservations include admissions which concluded in a release from jail before 5/2/2020. (n=58,882)")+
+  scale_y_log10(labels=comma)+
+  scale_x_log10(labels=comma)+ 
+  ggtitle("Initial Bond and Jail Stay", subtitle = "Data Available via Connecticut Open Data")
 
 test[1]
 ```
@@ -392,25 +410,26 @@ fviz_cluster(k3, data = coordinate)
 
 ```{r cluster analysis}
 #create unique identifier variables for each charge
-# CT_analysis_merged_cleaned_cluster$identifier <- NULL
-# rownames(CT_analysis_merged_cleaned_cluster) <- CT_analysis_merged_cleaned$identifier
+# merged_cleaned_cluster$identifier <- NULL
+# rownames(merged_cleaned_cluster) <- merged_cleaned$identifier
 
 #conduct cluster analysis, excluding those with life sentences
-CT_analysis_merged_cleaned_cluster <- CT_analysis_merged_cleaned %>% 
+merged_cleaned_cluster <- merged_cleaned %>% 
   ungroup() %>% 
   filter(life_sentence == 0) %>% 
-  select(sentence_days, pretrial_detention_length, sentenced)
+  select(sentence_days, pretrial_detention_length, bond_amount)
 
-k1 <- kmeans(CT_analysis_merged_cleaned_cluster, centers = 3)
+k1 <- kmeans(merged_cleaned_cluster, centers = 3)
 
-fviz_cluster(k1, data = CT_analysis_merged_cleaned_cluster)
+fviz_cluster(k1, data = merged_cleaned_cluster)
+fviz_nbclust(head(merged_cleaned_cluster, 10000), kmeans, method = "silhouette")
 
 ```
 
 ```{r OLS regression analysis}
 
 #run regression with sentenced as dependent variable
-lm1 <- CT_analysis_merged_cleaned %>% 
+lm1 <- merged_cleaned %>% 
   lm(sentenced ~ race.x +
                  as.factor(pretrial_offense) +
                  gender.x +
@@ -418,7 +437,7 @@ lm1 <- CT_analysis_merged_cleaned %>%
                  pretrial_detention_length,
      data = .)
 
-logit1 <- CT_analysis_merged_cleaned %>% 
+logit1 <- merged_cleaned %>% 
   glm(sentenced ~ race.x +
                  as.factor(pretrial_offense) +
                  gender.x +
