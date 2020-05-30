@@ -29,6 +29,7 @@ library(stringdist)
 library(scales)
 library(cluster)    
 library(factoextra)
+library(fuzzyjoin)
 
 
 
@@ -252,6 +253,40 @@ sentenced_clean_1charge <- sentenced_clean_1charge %>%
 #add indicator if still in prison
 most_recent_sentenced_download_date_in_dataset <- max(sentenced_clean_1charge$latest_sentenced_download_date)
 sentenced_clean_1charge$still_in_prison <- as.numeric(sentenced_clean_1charge$latest_sentenced_download_date == most_recent_sentenced_download_date_in_dataset)
+
+#test out cleaning up observations were someone has the same admit date for multiple different charges - example: identifier "ZZHHCCHS" - DELETE LATER
+sentenced_clean_1charge %>% 
+  group_by(identifier, sentenced_latest_admission_date) %>% 
+  filter(n() > 1) %>%
+  view()
+  
+ 
+test <- sentenced_clean_1charge %>% 
+  group_by(identifier, sentenced_latest_admission_date) %>% 
+  mutate(id = 1:n()) %>% 
+  mutate(offense2 = case_when(id == 2 ~ offense),
+         offense3 = case_when(id == 3 ~ offense),
+         offense4 = case_when(id == 4 ~ offense)) %>%
+  mutate(sentence_days2 = case_when(id == 2 ~ sentence_days),
+         sentence_days3 = case_when(id == 3 ~ sentence_days),
+         sentence_days4 = case_when(id == 4 ~ sentence_days)) 
+
+
+test <- sentenced_clean_1charge %>% 
+  select(identifier, sentence_days, sentenced_latest_admission_date, offense) %>% 
+  group_by(identifier, sentenced_latest_admission_date) %>% 
+  mutate(id = 1:n()) %>% 
+  spread(id, offense)
+
+
+test2 <- left_join(sentenced_clean_1charge, test, by = c("identifier", "sentenced_latest_admission_date"))
+
+
+
+
+
+
+
 ```
 
 
@@ -265,10 +300,25 @@ sentenced_clean_1charge$still_in_prison <- as.numeric(sentenced_clean_1charge$la
   #1. The string distance between the pretrial and sentenced offense. Most joins should have a string distance of 0, but for those that don't, the string distance in many cases should be fairly small (ie the difference between "ASSAULT, FIRST DEGREE DF" and "ASSAULT, SECOND DEGREE DF")
  #2. The length of time between the last date they showed up in the pretrial dataset, and the earliest time they appear in the sentenced download date. For most people, this length of time shouldnt be too long, as most people take plea deals and thus the pretrial -> sentencing process is fairly quick.
 
-#merge dfs
-merged <- full_join(pretrial_clean_1charge, sentenced_clean_1charge, by = c("identifier", "pretrial_latest_admission_date" = "sentenced_latest_admission_date"))
 
+#merge dfs using all observations
+#merged <- full_join(pretrial_clean_1charge, sentenced_clean_1charge, by = c("identifier", "pretrial_latest_admission_date" = "sentenced_latest_admission_date"))
 
+#merge dfs using only observations in last year
+merged <- pretrial_clean_1charge %>%
+  filter(latest_pretrial_download_date > most_recent_pretrial_download_date_in_dataset - 365) %>%
+  left_join(sentenced_clean_1charge %>%
+    filter(latest_sentenced_download_date > most_recent_sentenced_download_date_in_dataset - 365),
+    by = c("identifier", "pretrial_latest_admission_date" = "sentenced_latest_admission_date"))
+
+#merge dfs using only observations in last year but dont use admission date
+merged <- pretrial_clean_1charge %>%
+  filter(latest_pretrial_download_date > most_recent_pretrial_download_date_in_dataset - 365) %>%
+  left_join(sentenced_clean_1charge %>%
+    filter(latest_sentenced_download_date > most_recent_sentenced_download_date_in_dataset - 365),
+    by = "identifier")
+
+#view number of observations before and after merge
 nrow(pretrial_clean_1charge)
 nrow(sentenced_clean_1charge)
 nrow(merged)
@@ -276,24 +326,23 @@ nrow(merged)
 #Create columns to compare dates, compute string distance between offenses
 merged <- merged %>% 
   mutate(pretrial_to_sentence_difference = earliest_sentenced_download_date - latest_pretrial_download_date) %>% 
-  mutate(string_dist = stringdist(offense.x, offense.y))
+  mutate(offense_string_dist = stringdist(offense.x, offense.y))
 
+#visualize how well joins went
 merged %>% 
   filter(!is.na(offense.y)) %>% 
-  ggplot(aes(x = string_dist, y = pretrial_to_sentence_difference)) +
+  ggplot(aes(x = offense_string_dist, y = pretrial_to_sentence_difference)) +
     geom_point(size = .1)
 
 merged %>% 
   filter(!is.na(offense.y)) %>% 
-  ggplot(aes(x = string_dist)) +
+  ggplot(aes(x = offense_string_dist)) +
   geom_histogram()
 
 merged %>% 
   filter(!is.na(offense.y)) %>% 
   ggplot(aes(x = pretrial_to_sentence_difference)) +
     geom_histogram()
-
-
 
 ```
 
@@ -303,13 +352,13 @@ merged_cleaned <- merged %>%
   dplyr::rename(pretrial_offense = offense.x,
                 sentenced_offense = offense.y)
 
-#filter out people with negative pretrial_to_sentence_difference, which is likely due to an error in joins
+#filter out people with negative pretrial_to_sentence_difference, which is likely due to an error in joins as people cant be in pretrial detention for a charge after theyve been sentenced for it
 merged_cleaned <- merged_cleaned %>% 
   filter(pretrial_to_sentence_difference >= 0 | is.na(pretrial_to_sentence_difference))
 
-#filter out longer string distances, which is also likely an error in joins
+#filter out longer string distances, which is also likely an error in joins. most offenses start to vary significantly after a string distance of 8
 merged_cleaned <- merged_cleaned %>% 
-  filter(string_dist <= 15 | is.na(string_dist))
+  filter(offense_string_dist <= 8 | is.na(offense_string_dist))
 
 #create 0/1 indicator of whether someone in the pretrial detention data appears in the sentenced data for that offense
 merged_cleaned <- merged_cleaned %>% 
@@ -326,28 +375,88 @@ merged_cleaned <- merged_cleaned %>%
 #give 0s to people with nas for life sentence
 merged_cleaned <- merged_cleaned %>% 
   mutate(life_sentence = replace(life_sentence, is.na(life_sentence), 0))
+
+#replace NAs with 0s in still_in_prison and number_convictions columns
+merged_cleaned <- merged_cleaned %>% 
+  mutate(still_in_prison = replace(still_in_prison, is.na(still_in_prison), 0)) %>% 
+  mutate(number_convictions = replace(number_convictions, is.na(number_convictions), 0))
+
+#put 0's for still_in_jail column in case people have gone to prison in between downloading pretrial dataset and sentenced dataset, as download dates differ slightly
+merged_cleaned <- merged_cleaned %>% 
+    mutate(still_in_jail = replace(still_in_jail, still_in_jail == 1 & still_in_prison == 1, 0))
+
+#remove unnecessary columns and ungroup
+merged_cleaned <- merged_cleaned %>% 
+  ungroup() %>% 
+  select(-sentenced_facility, -pretrial_facility, -race.y, -gender.y, -special_parole_end_date) %>% 
+  dplyr::rename(race = race.x, gender = gender.x)
+
+#visualize how well cleaning of joins went
+merged_cleaned %>% 
+  filter(!is.na(sentenced_offense)) %>% 
+  ggplot(aes(x = offense_string_dist, y = pretrial_to_sentence_difference)) +
+    geom_point(size = .1)
+
+merged_cleaned %>% 
+  filter(!is.na(sentenced_offense)) %>% 
+  ggplot(aes(x = offense_string_dist)) +
+  geom_histogram()
+
+merged_cleaned %>% 
+  filter(!is.na(sentenced_offense)) %>% 
+  ggplot(aes(x = pretrial_to_sentence_difference)) +
+    geom_histogram()
+
+#compare how many people are lost in cleaning process
+observations_in_merged <- merged %>% 
+  filter(!is.na(offense.y)) %>% 
+  filter(!is.na(pretrial_detention_length)) %>% 
+  nrow() 
+observations_in_merged_cleaned <- merged_cleaned %>% 
+  filter(!is.na(sentenced_offense)) %>% 
+  filter(!is.na(pretrial_detention_length)) %>% 
+  nrow()
+#people removed by cleaning
+observations_in_merged - observations_in_merged_cleaned
+#percent of people remaining
+(observations_in_merged_cleaned / observations_in_merged) * 100
+
+#vector of people in pretrial dataset in last year
+pretrial_dataset_last_year_vec <- pretrial_clean_1charge %>%
+  filter(latest_pretrial_download_date > most_recent_pretrial_download_date_in_dataset - 365) %>% 
+  select(identifier) %>% 
+  pull()
+
+
+sentenced_clean_1charge %>%
+    filter(latest_sentenced_download_date > most_recent_sentenced_download_date_in_dataset - 365) %>% 
+    filter(identifier %in% pretrial_dataset_last_year_vec) %>% 
+    view() 
+    
+
+
+
+
 ```
 
 ```{r visualize merged and cleaned dataset}
 
 #look at relationship between pretrial detention length and sentence days
-merged_cleaned %>% 
+merged_cleaned %>%  
   filter(sentence_days < 5000) %>% 
-  ggplot(aes(x = sentence_days, y = pretrial_detention_length)) +
+  ggplot(aes(x = sentence_days, y = pretrial_detention_length, color = sentenced)) +
     geom_point()
 
 
+merged_cleaned %>%  
+  filter(sentence_days < 5000) %>%
+  ggplot(aes(x = sentence_days, y = pretrial_detention_length))+
+    stat_binhex() + scale_fill_viridis(name="n in hex") +
+    theme_minimal() +
+    theme(plot.title = element_text(hjust = 0)) +
+    scale_y_log10(labels=comma)+
+    scale_x_log10(labels=comma)
 
-ggplot(data=bd, aes(x=bond_amount, y=dur))+
-  stat_binhex() + scale_fill_viridis(name="n in hex") +
-  theme_minimal() +
-  theme(plot.title = element_text(hjust = 0)) +
-  labs(x="Initial Bond Amount ($)", y="Jail Stay (Days)", caption="\nThe plot displays the frequency of bond amount/jail stay combinations with hexagonal bins. (See legend.) \nObservations include admissions which concluded in a release from jail before 5/2/2020. (n=58,882)")+
-  scale_y_log10(labels=comma)+
-  scale_x_log10(labels=comma)+ 
-  ggtitle("Initial Bond and Jail Stay", subtitle = "Data Available via Connecticut Open Data")
-
-test[1]
 ```
 
 
@@ -417,7 +526,7 @@ fviz_cluster(k3, data = coordinate)
 merged_cleaned_cluster <- merged_cleaned %>% 
   ungroup() %>% 
   filter(life_sentence == 0) %>% 
-  select(sentence_days, pretrial_detention_length, bond_amount)
+  select(sentence_days, pretrial_detention_length)
 
 k1 <- kmeans(merged_cleaned_cluster, centers = 3)
 

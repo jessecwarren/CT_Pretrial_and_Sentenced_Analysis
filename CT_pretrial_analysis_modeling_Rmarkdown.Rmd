@@ -1,0 +1,278 @@
+---
+title: "CT_pretrial_analysis_modeling"
+author: "Jesse Warren"
+date: "5/29/2020"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(tidyverse)
+library(janitor)
+library(data.table)
+library(RSocrata)
+library(ggplot2)
+library(ggrepel)
+library(extrafont)
+library(ggthemes)
+library(reshape)
+library(grid)
+library(scales)
+library(RColorBrewer)
+library(gridExtra)
+library(viridis)
+library(hexbin)
+library(sandwich)
+library(stargazer)
+library(lubridate)
+library(stringdist)
+library(scales)
+library(cluster)    
+library(factoextra)
+library(fuzzyjoin)
+library(tidymodels)
+library(modeldata)
+library(ranger)
+
+
+
+library(sf)
+library(ggpubr)
+library(scales)
+options(scipen=999)
+```
+
+
+
+```{r load pretrial data}
+#2 options to load data:
+  #1. straight from online open data repository for most up to date data
+  #2. from local files (downloaded 5/2/2020)
+
+#option 1.
+#load pretrial data from Connecticut open data site  
+pretrial_data_URL <- "https://data.ct.gov/Public-Safety/Accused-Pre-Trial-Inmates-in-Correctional-Faciliti/b674-jy6w"
+#CT__analysis_pretrial_raw <- read.socrata((CT_pretrial_data_URL))
+
+#option 2.
+#load from local file, in Data/ folder
+pretrial_raw <- fread("Data/Accused_Pre-Trial_Inmates_in_Correctional_Facilities.csv")
+
+#create fix race names function
+fix_race_names_function <- function(df) {
+  df$RACE[df$RACE == 'AMER IND'] <- 'Native American'
+  df$RACE[df$RACE == 'ASIAN'] <- 'Asian'
+  df$RACE[df$RACE == 'BLACK'] <- 'Black'
+  df$RACE[df$RACE == 'WHITE'] <- 'White'
+  df$RACE[df$RACE == 'HISPANIC'] <- 'Hispanic'
+  return(df)
+}
+
+#fix race names
+pretrial_raw <- fix_race_names_function(pretrial_raw)
+
+#clean names, set variable types, fix dates
+pretrial_raw <- pretrial_raw %>% 
+  clean_names() %>% 
+  mutate(identifier = as.character(identifier),
+         race = as.factor(race),
+         gender = as.factor(gender),
+         age = as.numeric(age),
+         offense = as.character(offense),
+         facility = as.factor(facility),
+         detainer = as.factor(detainer),
+         download_date = as.Date(download_date, '%m/%d/%Y'),
+         latest_admission_date = as.Date(latest_admission_date, '%m/%d/%Y')) %>% 
+  dplyr::rename(pretrial_age = age,
+         pretrial_facility = facility,
+         pretrial_detainer =  detainer,
+         pretrial_download_date = download_date, 
+         pretrial_latest_admission_date = latest_admission_date)
+
+pretrial_clean <- pretrial_raw
+```
+
+
+```{r remove inconsistently coded race and gender observations}
+#create dfs of unique people
+pretrial_people <- unique(pretrial_clean[,c("identifier", "race", "gender")])
+
+#get difference between number of unique people, and number of unique people by race and gender as well to see if some people are being coded multiple times as different races/genders
+nrow(pretrial_people) - length(unique(pretrial_clean[,"identifier"])) 
+
+
+#exclude the people coded with different race and/or genders from both pretrial and sentenced dfs
+exclude_inconsistent_people_vec <- pretrial_people$identifier[duplicated(pretrial_people$identifier)]
+
+pretrial_clean <- pretrial_clean %>% 
+  filter(!identifier %in% exclude_inconsistent_people_vec)
+```
+
+```{r get one observation per charge for the pretrial detention dataset}
+#Create new df that will have only one observation per charge
+pretrial_clean_1charge <- pretrial_clean
+
+#remove excess whitespace in offense variable
+pretrial_clean_1charge <- pretrial_clean_1charge %>% 
+  mutate(offense = str_squish(offense))
+
+#Make a new variable for length of time in jail for person-admission
+pretrial_clean_1charge <- pretrial_clean_1charge %>% 
+   group_by(identifier, pretrial_latest_admission_date) %>%
+   mutate(pretrial_detention_length = n())
+
+#Generate indicators for date being 1)most recent download date, 2)earliest possible download date
+most_recent_pretrial_download_date_in_dataset <- max(pretrial_clean_1charge$pretrial_download_date)
+earliest_pretrial_download_date_in_dataset <- min(pretrial_clean_1charge$pretrial_download_date)
+
+#this checks and sees if their pretrial download date is the most recent one available, indicating they are still in jail. max.still_in_jail tells is 1 if they are still in jail as of this data download
+pretrial_clean_1charge$still_in_jail <- as.numeric(pretrial_clean_1charge$pretrial_download_date == most_recent_pretrial_download_date_in_dataset)
+pretrial_clean_1charge <- pretrial_clean_1charge %>% 
+   group_by(identifier, pretrial_latest_admission_date) %>%
+   mutate(still_in_jail = max(still_in_jail),
+          earliest_pretrial_download_date = min(pretrial_download_date))
+
+#now just get one observation per charge. note that this takes the bond amount on the last day the person was in pretrial detention as their bond amount - for some observations this changes throughout the dataset. however the most recent observation is likely the most accurate one.
+pretrial_clean_1charge <- pretrial_clean_1charge %>% 
+  arrange(desc(pretrial_download_date)) %>% 
+  group_by(identifier, pretrial_latest_admission_date, offense) %>% 
+  slice(1) %>% 
+  dplyr::rename(latest_pretrial_download_date = pretrial_download_date)
+
+#add column with number of times each identifier is in dataset. note that some people have multiple observations because they were either:
+  #arrested for multiple offenses at the same time
+  #arrested different times for different offenses
+pretrial_clean_1charge <- pretrial_clean_1charge %>% 
+  group_by(identifier) %>% 
+  mutate(number_pretrial_detention_charges = n())
+
+#exclude people who exit the dataset in the first 60 days of recorded data (what should be the max time in pretrial detention). we dont observe their entire time in dataset at beginning, as they might have been in pretrial detention before data started being collected
+pretrial_clean_1charge <- pretrial_clean_1charge %>% 
+  filter(latest_pretrial_download_date > (60 + earliest_pretrial_download_date_in_dataset))
+
+```
+
+```{r create variables for modeling}
+#create a new modeling df
+pretrial_modeling_df <- pretrial_clean_1charge
+
+#only select relevant variables
+pretrial_modeling_df <- pretrial_modeling_df %>% 
+  select(identifier,
+         race,
+         gender,
+         pretrial_age,
+         bond_amount,
+         offense,
+         pretrial_detention_length,
+         still_in_jail,
+         pretrial_detainer,
+         number_pretrial_detention_charges,
+         pretrial_latest_admission_date,
+         earliest_pretrial_download_date,
+         latest_pretrial_download_date)
+
+#create variable ordering each pretrial detention charge
+pretrial_modeling_df <- pretrial_modeling_df %>% 
+  group_by(identifier) %>%
+  arrange(earliest_pretrial_download_date) %>% 
+  mutate(charge_count = 1:n()) %>% 
+  select(1:number_pretrial_detention_charges, charge_count, everything())
+
+#create indicator noting the person was arrested more than once
+pretrial_modeling_df <- pretrial_modeling_df %>% 
+  group_by(identifier) %>%
+  mutate(multiple_charges = ifelse(number_pretrial_detention_charges > 1, 1, 0)) %>% 
+  select(1:charge_count, multiple_charges, everything())
+  
+#calculate time between each charge
+pretrial_modeling_df <- pretrial_modeling_df %>% 
+  group_by(identifier) %>%
+  arrange(earliest_pretrial_download_date) %>% 
+  mutate(time_since_last_charge = earliest_pretrial_download_date - lag(earliest_pretrial_download_date)) %>% 
+  select(1:multiple_charges, time_since_last_charge, everything())
+
+#ungroup
+pretrial_modeling_df <- pretrial_modeling_df %>% 
+  ungroup()
+```
+
+```{r conduct cluser analysis}
+#conduct cluster analysis, excluding those with life sentences
+pretrial_modeling_df_cluster <- pretrial_modeling_df %>% 
+  ungroup() %>% 
+  select(pretrial_age, pretrial_detention_length, bond_amount, number_pretrial_detention_charges)
+
+fviz_nbclust(head(pretrial_modeling_df_cluster, 10000), kmeans, method = "silhouette")
+
+k1 <- kmeans(pretrial_modeling_df_cluster, centers = 2)
+
+fviz_cluster(k1, data = pretrial_modeling_df_cluster)
+```
+
+```{r create model to try to predict number of charges the person will have}
+#questions 
+  # do i need one row per identifier?
+
+pretrial_modeling_df <- pretrial_modeling_df %>% 
+  mutate(multiple_charges = as.factor(multiple_charges))
+
+#set seed
+set.seed(29)
+
+#split data into training and test, using a 4/5 proportion
+data_split <- initial_split(pretrial_modeling_df, prop = 4/5)
+train_data <- training(data_split)
+test_data <- testing(data_split)
+
+#create recipe for model - Note: I dont use offense because it has so many levels it takes the model a long time to run
+number_charges_recipe <- 
+  recipe(multiple_charges ~ race + gender + offense + pretrial_age + bond_amount + pretrial_detention_length + identifier, data = train_data) %>% #set outcome & predicter variables
+  update_role(identifier, new_role = "ID") %>% #set identifier as id
+  step_zv(all_predictors()) #remove columns from data when training data set have a single value (potentially the case for more rare offenses)
+summary(number_charges_recipe)
+
+#logistic regression model
+logistic_mod <- 
+  logistic_reg() %>% 
+  set_engine("glm")
+
+#create workflow
+number_charges_wflow <- 
+  workflow() %>% 
+  add_model(logistic_mod) %>% 
+  add_recipe(number_charges_recipe)
+
+#fit model
+number_charges_fit <- 
+  number_charges_wflow %>% 
+  fit(data = train_data)
+
+#view fitted model
+number_charges_fit %>% 
+  pull_workflow_fit() %>% 
+  tidy() 
+
+#create prediction df 
+number_charges_pred <- 
+  predict(number_charges_fit, test_data, type = "prob") %>% 
+  bind_cols(test_data)
+
+#roc curve
+number_charges_pred %>% 
+  roc_curve(truth = multiple_charges, .pred_1) %>% 
+  autoplot()
+
+#area under curve
+number_charges_pred %>% 
+  roc_auc(truth = multiple_charges, .pred_1)
+
+#confusion matrix
+number_charges_pred %>% 
+  conf_mat(multiple_charges, .pred_1)
+```
+
+
+

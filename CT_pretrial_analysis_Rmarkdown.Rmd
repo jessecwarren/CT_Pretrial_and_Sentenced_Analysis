@@ -71,7 +71,7 @@ CT_pretrial_raw <- CT_pretrial_raw %>%
 ```
 
 
-```{r Preliminary descriptive look, cache = TRUE}
+```{r Preliminary descriptive look, cache = TRUE, eval = FALSE}
 #how many observations are there?
 nrow(CT_pretrial_raw)
 
@@ -417,7 +417,7 @@ cor(bd$bond_amount,bd$dur)
 ```
 There is a correlation of 0.3918 between time in jail and initial bond bond amount.
 
-# Regression footnote
+# Regression 
 
 ```{r, message=FALSE, warning=FALSE}
 CTbond <- mutate(CTbond, chargenew = factor(offense)) %>%
@@ -453,3 +453,10 @@ stargazer(reg3l, reg4l, type="text", omit=c("chargenew", "fac_factor"), style="q
           notes = "Using robust standard errors."
           )
 ```
+
+# Cluster Analysis
+```{r format data for cluster analysis}
+
+```
+
+
