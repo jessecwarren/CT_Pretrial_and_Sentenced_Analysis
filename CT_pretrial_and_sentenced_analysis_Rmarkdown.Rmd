@@ -1,5 +1,5 @@
 ---
-title: "Untitled"
+title: "CT_pretrial_and_sentenced_analysis"
 author: "Jesse Warren"
 date: "5/13/2020"
 output: html_document
@@ -7,7 +7,7 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
-library(tidyverse)
+
 library(janitor)
 library(data.table)
 library(RSocrata)
@@ -30,12 +30,16 @@ library(scales)
 library(cluster)    
 library(factoextra)
 library(fuzzyjoin)
+library(MASS)
+library(arm)
 
 
 
 options(scipen=999)
+library(tidyverse)
+#load functions from helper files
+source("Helper_functions/Data_loading_and_cleaning_functions.R")
 ```
-
 
 
 
@@ -53,38 +57,17 @@ pretrial_data_URL <- "https://data.ct.gov/Public-Safety/Accused-Pre-Trial-Inmate
 #load from local file, in Data/ folder
 pretrial_raw <- fread("Data/Accused_Pre-Trial_Inmates_in_Correctional_Facilities.csv")
 
-#create fix race names function
-fix_race_names_function <- function(df) {
-  df$RACE[df$RACE == 'AMER IND'] <- 'Native American'
-  df$RACE[df$RACE == 'ASIAN'] <- 'Asian'
-  df$RACE[df$RACE == 'BLACK'] <- 'Black'
-  df$RACE[df$RACE == 'WHITE'] <- 'White'
-  df$RACE[df$RACE == 'HISPANIC'] <- 'Hispanic'
-  return(df)
-}
-
-#fix race names
+#fix race names using helper function
 pretrial_raw <- fix_race_names_function(pretrial_raw)
 
-#clean names, set variable types, fix dates
-pretrial_raw <- pretrial_raw %>% 
-  clean_names() %>% 
-  mutate(identifier = as.character(identifier),
-         race = as.factor(race),
-         gender = as.factor(gender),
-         age = as.numeric(age),
-         offense = as.character(offense),
-         facility = as.factor(facility),
-         detainer = as.factor(detainer),
-         download_date = as.Date(download_date, '%m/%d/%Y'),
-         latest_admission_date = as.Date(latest_admission_date, '%m/%d/%Y')) %>% 
-  dplyr::rename(pretrial_age = age,
-         pretrial_facility = facility,
-         pretrial_detainer =  detainer,
-         pretrial_download_date = download_date, 
-         pretrial_latest_admission_date = latest_admission_date)
+#clean names, set variable types, fix dates using helper function
+pretrial_raw <- pretrial_names_variable_types_dates_cleaning_function(pretrial_raw)
 
+#create clean df to work with from here on out
 pretrial_clean <- pretrial_raw
+
+#remove inconsistently coded race and gender observations
+pretrial_clean <- remove_inconsistently_coded_people_function(pretrial_clean)
 ```
 
 ```{r load sentenced data}
@@ -105,26 +88,13 @@ sentenced_raw <- fread("Data/Sentenced_Inmates_in_Correctional_Facilities.csv")
 sentenced_raw <- fix_race_names_function(sentenced_raw)
 
 #clean names, set variable types, fix dates
-sentenced_raw <- sentenced_raw %>% 
-  clean_names() %>% 
-  mutate(identifier = as.character(identifier),
-         race = as.factor(race),
-         gender = as.factor(gender),
-         age = as.numeric(age),
-         offense = as.character(offense),
-         facility = as.factor(facility),
-         detainer = as.factor(detainer),
-         download_date = as.Date(download_date, '%m/%d/%Y'),
-         end_sentence_date = as.Date(end_sentence_date, '%m/%d/%Y'),
-         latest_admission_date = as.Date(latest_admission_date, '%m/%d/%Y'),
-         special_parole_end_date = as.Date(special_parole_end_date, '%m/%d/%Y')) %>% 
-  dplyr::rename(sentenced_age = age, 
-         sentenced_facility = facility, 
-         sentenced_detainer = detainer,
-         sentenced_download_date = download_date,
-         sentenced_latest_admission_date = latest_admission_date)
+sentenced_raw <- sentenced_names_variable_types_dates_cleaning_function(sentenced_raw)
 
+#create clean df to work with from here on out
 sentenced_clean <- sentenced_raw
+
+#remove inconsistently coded race and gender observations
+sentenced_clean <- remove_inconsistently_coded_people_function(sentenced_clean)
 ```
 
 ```{r create smaller dataframes to work with to test and DELETE LATER}
@@ -137,26 +107,6 @@ sentenced_clean <- sentenced_raw
 pretrial_clean <- pretrial_raw
 sentenced_clean <- sentenced_raw
 
-```
-
-```{r remove inconsistently coded race and gender observations}
-#create dfs of unique people
-pretrial_people <- unique(pretrial_clean[,c("identifier", "race", "gender")])
-sentenced_people <- unique(sentenced_clean[,c("identifier", "race", "gender")])
-
-#get difference between number of unique people, and number of unique people by race and gender as well to see if some people are being coded multiple times as different races/genders
-nrow(pretrial_people) - length(unique(pretrial_clean[,"identifier"])) 
-nrow(sentenced_people) - length(unique(sentenced_clean[,"identifier"])) 
-
-
-#exclude the people coded with different race and/or genders from both pretrial and sentenced dfs
-exclude_inconsistent_people_vec <- pretrial_people$identifier[duplicated(pretrial_people$identifier)]
-exclude_inconsistent_people_vec <- append(exclude_inconsistent_people_vec, sentenced_people$identifier[duplicated(sentenced_people$identifier)])
-
-pretrial_clean <- pretrial_clean %>% 
-  filter(!identifier %in% exclude_inconsistent_people_vec)
-sentenced_clean <- sentenced_clean %>% 
-  filter(!identifier %in% exclude_inconsistent_people_vec)
 ```
 
 ```{r get one observation per charge for the pretrial detention dataset}
@@ -200,6 +150,10 @@ pretrial_clean_1charge <- pretrial_clean_1charge %>%
 #exclude people who exit the dataset in the first 60 days of recorded data (what should be the max time in pretrial detention). we dont observe their entire time in dataset at beginning, as they might have been in pretrial detention before data started being collected
 pretrial_clean_1charge <- pretrial_clean_1charge %>% 
   filter(latest_pretrial_download_date > (60 + earliest_pretrial_download_date_in_dataset))
+
+#rename offense category
+pretrial_clean_1charge <- pretrial_clean_1charge %>% 
+  dplyr::rename(pretrial_offense = offense)
 
 ```
 
@@ -254,6 +208,24 @@ sentenced_clean_1charge <- sentenced_clean_1charge %>%
 most_recent_sentenced_download_date_in_dataset <- max(sentenced_clean_1charge$latest_sentenced_download_date)
 sentenced_clean_1charge$still_in_prison <- as.numeric(sentenced_clean_1charge$latest_sentenced_download_date == most_recent_sentenced_download_date_in_dataset)
 
+#rename offense category
+sentenced_clean_1charge <- sentenced_clean_1charge %>% 
+  dplyr::rename(sentenced_offense = offense)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #test out cleaning up observations were someone has the same admit date for multiple different charges - example: identifier "ZZHHCCHS" - DELETE LATER
 sentenced_clean_1charge %>% 
   group_by(identifier, sentenced_latest_admission_date) %>% 
@@ -273,7 +245,7 @@ test <- sentenced_clean_1charge %>%
 
 
 test <- sentenced_clean_1charge %>% 
-  select(identifier, sentence_days, sentenced_latest_admission_date, offense) %>% 
+  dplyr::select(identifier, sentence_days, sentenced_latest_admission_date, offense) %>% 
   group_by(identifier, sentenced_latest_admission_date) %>% 
   mutate(id = 1:n()) %>% 
   spread(id, offense)
@@ -304,12 +276,12 @@ test2 <- left_join(sentenced_clean_1charge, test, by = c("identifier", "sentence
 #merge dfs using all observations
 #merged <- full_join(pretrial_clean_1charge, sentenced_clean_1charge, by = c("identifier", "pretrial_latest_admission_date" = "sentenced_latest_admission_date"))
 
-#merge dfs using only observations in last year
-merged <- pretrial_clean_1charge %>%
-  filter(latest_pretrial_download_date > most_recent_pretrial_download_date_in_dataset - 365) %>%
-  left_join(sentenced_clean_1charge %>%
-    filter(latest_sentenced_download_date > most_recent_sentenced_download_date_in_dataset - 365),
-    by = c("identifier", "pretrial_latest_admission_date" = "sentenced_latest_admission_date"))
+# #merge dfs using only observations in last year
+# merged <- pretrial_clean_1charge %>%
+#   filter(latest_pretrial_download_date > most_recent_pretrial_download_date_in_dataset - 365) %>%
+#   left_join(sentenced_clean_1charge %>%
+#     filter(latest_sentenced_download_date > most_recent_sentenced_download_date_in_dataset - 365),
+#     by = c("identifier", "pretrial_latest_admission_date" = "sentenced_latest_admission_date"))
 
 #merge dfs using only observations in last year but dont use admission date
 merged <- pretrial_clean_1charge %>%
@@ -326,31 +298,31 @@ nrow(merged)
 #Create columns to compare dates, compute string distance between offenses
 merged <- merged %>% 
   mutate(pretrial_to_sentence_difference = earliest_sentenced_download_date - latest_pretrial_download_date) %>% 
-  mutate(offense_string_dist = stringdist(offense.x, offense.y))
+  mutate(offense_string_dist = stringdist(pretrial_offense, sentenced_offense))
 
 #visualize how well joins went
 merged %>% 
-  filter(!is.na(offense.y)) %>% 
+  filter(!is.na(sentenced_offense)) %>% 
   ggplot(aes(x = offense_string_dist, y = pretrial_to_sentence_difference)) +
-    geom_point(size = .1)
+    #geom_point(size = .1) 
+    stat_binhex() + scale_fill_viridis(name="n in hex")
+
 
 merged %>% 
-  filter(!is.na(offense.y)) %>% 
+  filter(!is.na(sentenced_offense)) %>% 
   ggplot(aes(x = offense_string_dist)) +
   geom_histogram()
 
 merged %>% 
-  filter(!is.na(offense.y)) %>% 
+  filter(!is.na(sentenced_offense)) %>% 
   ggplot(aes(x = pretrial_to_sentence_difference)) +
     geom_histogram()
 
 ```
 
 ```{r prepare merged data for analysis}
-#clean up names
-merged_cleaned <- merged %>% 
-  dplyr::rename(pretrial_offense = offense.x,
-                sentenced_offense = offense.y)
+#create new clean df
+merged_cleaned <- merged
 
 #filter out people with negative pretrial_to_sentence_difference, which is likely due to an error in joins as people cant be in pretrial detention for a charge after theyve been sentenced for it
 merged_cleaned <- merged_cleaned %>% 
@@ -358,7 +330,7 @@ merged_cleaned <- merged_cleaned %>%
 
 #filter out longer string distances, which is also likely an error in joins. most offenses start to vary significantly after a string distance of 8
 merged_cleaned <- merged_cleaned %>% 
-  filter(offense_string_dist <= 8 | is.na(offense_string_dist))
+  filter(offense_string_dist <= 9 | is.na(offense_string_dist))
 
 #create 0/1 indicator of whether someone in the pretrial detention data appears in the sentenced data for that offense
 merged_cleaned <- merged_cleaned %>% 
@@ -367,10 +339,6 @@ merged_cleaned <- merged_cleaned %>%
 #replace people who werent sentenced, who have NA sentenced_days with 0's
 merged_cleaned <- merged_cleaned %>% 
   mutate(sentence_days = replace(sentence_days, is.na(sentence_days), 0))
-
-#filter out people not in pretrial detention dataset
-merged_cleaned <- merged_cleaned %>% 
-  filter(!is.na(pretrial_detention_length))
 
 #give 0s to people with nas for life sentence
 merged_cleaned <- merged_cleaned %>% 
@@ -388,7 +356,7 @@ merged_cleaned <- merged_cleaned %>%
 #remove unnecessary columns and ungroup
 merged_cleaned <- merged_cleaned %>% 
   ungroup() %>% 
-  select(-sentenced_facility, -pretrial_facility, -race.y, -gender.y, -special_parole_end_date) %>% 
+  dplyr::select(-sentenced_facility, -pretrial_facility, -race.y, -gender.y, -special_parole_end_date) %>% 
   dplyr::rename(race = race.x, gender = gender.x)
 
 #visualize how well cleaning of joins went
@@ -396,6 +364,7 @@ merged_cleaned %>%
   filter(!is.na(sentenced_offense)) %>% 
   ggplot(aes(x = offense_string_dist, y = pretrial_to_sentence_difference)) +
     geom_point(size = .1)
+
 
 merged_cleaned %>% 
   filter(!is.na(sentenced_offense)) %>% 
@@ -409,7 +378,7 @@ merged_cleaned %>%
 
 #compare how many people are lost in cleaning process
 observations_in_merged <- merged %>% 
-  filter(!is.na(offense.y)) %>% 
+  filter(!is.na(sentenced_offense)) %>% 
   filter(!is.na(pretrial_detention_length)) %>% 
   nrow() 
 observations_in_merged_cleaned <- merged_cleaned %>% 
@@ -418,22 +387,22 @@ observations_in_merged_cleaned <- merged_cleaned %>%
   nrow()
 #people removed by cleaning
 observations_in_merged - observations_in_merged_cleaned
-#percent of people remaining
-(observations_in_merged_cleaned / observations_in_merged) * 100
+#percent of people removed
+print("% people removed in cleaning process:")
+100 - ((observations_in_merged_cleaned / observations_in_merged) * 100)
 
-#vector of people in pretrial dataset in last year
-pretrial_dataset_last_year_vec <- pretrial_clean_1charge %>%
-  filter(latest_pretrial_download_date > most_recent_pretrial_download_date_in_dataset - 365) %>% 
-  select(identifier) %>% 
+#see how many people were sentenced in the last year but werent found in the dataset, the best measure of how well the matching went. theoretically most should have been matched (we might expect some to not be matched if the people were in pretrial detention 1.5 years ago, then were sentenced in the last year but werent in pretrial detention in the past year)
+sentenced_dataset_last_year_vec <- sentenced_clean_1charge %>%
+  filter(earliest_sentenced_download_date > most_recent_sentenced_download_date_in_dataset - 365) %>% 
+  dplyr::select(identifier) %>% 
+  unique() %>% 
   pull()
 
-
-sentenced_clean_1charge %>%
-    filter(latest_sentenced_download_date > most_recent_sentenced_download_date_in_dataset - 365) %>% 
-    filter(identifier %in% pretrial_dataset_last_year_vec) %>% 
-    view() 
-    
-
+print("% people who were sentenced in the last year that had a match in the final merged dataset. if perfect, this number should be close to 100%")
+merged_cleaned %>% 
+  filter(identifier %in% sentenced_dataset_last_year_vec) %>% 
+  nrow() / 
+  length(sentenced_dataset_last_year_vec) * 100
 
 
 
@@ -447,18 +416,61 @@ merged_cleaned %>%
   ggplot(aes(x = sentence_days, y = pretrial_detention_length, color = sentenced)) +
     geom_point()
 
-
-merged_cleaned %>%  
-  filter(sentence_days < 5000) %>%
-  ggplot(aes(x = sentence_days, y = pretrial_detention_length))+
-    stat_binhex() + scale_fill_viridis(name="n in hex") +
-    theme_minimal() +
-    theme(plot.title = element_text(hjust = 0)) +
-    scale_y_log10(labels=comma)+
-    scale_x_log10(labels=comma)
-
 ```
 
+
+```{r regression analysis}
+#make pretrial offense a factor for regressions
+merged_cleaned <- merged_cleaned %>%
+  mutate(pretrial_offense = as.factor(pretrial_offense))
+
+#run regressions with sentence days as dependent variable
+sink("Regression_results/sentence_days_regressions.txt")
+lm_sentence_days <- merged_cleaned %>%
+  lm(sentence_days ~ bond_amount +
+                 pretrial_detention_length +
+                 race +
+                 pretrial_age +
+                 gender +
+                 pretrial_offense,
+     data = .)
+print("OLS")
+summary(lm_sentence_days)
+
+# negative_binomial_sentence_days <- merged_cleaned %>%
+#   glm.nb(sentence_days ~ bond_amount +
+#                  pretrial_detention_length +
+#                  race +
+#                  pretrial_age +
+#                  gender +
+#                  pretrial_offense,
+#      data = .)
+# print("Negative binomial")
+# summary(negative_binomial_sentence_days)
+
+
+bayes_glm_sentence_days <- merged_cleaned %>%
+  bayesglm(sentence_days ~ bond_amount +
+                 pretrial_detention_length +
+                 race +
+                 pretrial_age +
+                 gender +
+                 pretrial_offense,
+     data = ., 
+     family = poisson)
+print("Bayes GLM")
+summary(bayes_glm_sentence_days)
+sink()
+
+#regression table outputs
+stargazer(lm_sentence_days,
+          type = "html",
+          title = "OLS Regression outputs",
+          digits = 2,
+          omit = "pretrial_offense",
+          out = "Regression_results/sentence_days_OLS_table.html")
+
+```
 
 
 ```{r Dafeng example cluster analysis}
@@ -526,7 +538,7 @@ fviz_cluster(k3, data = coordinate)
 merged_cleaned_cluster <- merged_cleaned %>% 
   ungroup() %>% 
   filter(life_sentence == 0) %>% 
-  select(sentence_days, pretrial_detention_length)
+  dplyr::select(sentence_days, pretrial_detention_length)
 
 k1 <- kmeans(merged_cleaned_cluster, centers = 3)
 
@@ -535,27 +547,6 @@ fviz_nbclust(head(merged_cleaned_cluster, 10000), kmeans, method = "silhouette")
 
 ```
 
-```{r OLS regression analysis}
 
-#run regression with sentenced as dependent variable
-lm1 <- merged_cleaned %>% 
-  lm(sentenced ~ race.x +
-                 as.factor(pretrial_offense) +
-                 gender.x +
-                 bond_amount +
-                 pretrial_detention_length,
-     data = .)
 
-logit1 <- merged_cleaned %>% 
-  glm(sentenced ~ race.x +
-                 as.factor(pretrial_offense) +
-                 gender.x +
-                 bond_amount +
-                 pretrial_detention_length,
-     family = "binomial",
-     data = .)
-
-summary(lm1)
-summary(logit1)
-```
 

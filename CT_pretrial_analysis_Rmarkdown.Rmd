@@ -9,7 +9,7 @@ editor_options:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
-library(tidyverse)
+
 library(janitor)
 library(data.table)
 library(RSocrata)
@@ -26,11 +26,15 @@ library(viridis)
 library(hexbin)
 library(sandwich)
 library(stargazer)
-
 library(sf)
 library(ggpubr)
 library(scales)
+
 options(scipen=999)
+library(tidyverse)
+
+#load functions from helper files
+source("Helper_functions/Data_loading_and_cleaning_functions.R")
 ```
 
 Large parts of code adapted from Alex Albright's descriptive analysis, which is detailed found here: https://thelittledataset.com/2019/08/12/ct-pretrial-descriptives/

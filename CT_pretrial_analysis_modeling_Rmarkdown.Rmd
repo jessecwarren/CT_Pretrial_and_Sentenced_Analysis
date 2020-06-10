@@ -9,7 +9,7 @@ editor_options:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
-library(tidyverse)
+
 library(janitor)
 library(data.table)
 library(RSocrata)
@@ -35,13 +35,15 @@ library(fuzzyjoin)
 library(tidymodels)
 library(modeldata)
 library(ranger)
-
-
-
 library(sf)
 library(ggpubr)
 library(scales)
 options(scipen=999)
+library(tidyverse)
+
+
+#load functions from helper files
+source("Helper_functions/Data_loading_and_cleaning_functions.R")
 ```
 
 
@@ -60,54 +62,17 @@ pretrial_data_URL <- "https://data.ct.gov/Public-Safety/Accused-Pre-Trial-Inmate
 #load from local file, in Data/ folder
 pretrial_raw <- fread("Data/Accused_Pre-Trial_Inmates_in_Correctional_Facilities.csv")
 
-#create fix race names function
-fix_race_names_function <- function(df) {
-  df$RACE[df$RACE == 'AMER IND'] <- 'Native American'
-  df$RACE[df$RACE == 'ASIAN'] <- 'Asian'
-  df$RACE[df$RACE == 'BLACK'] <- 'Black'
-  df$RACE[df$RACE == 'WHITE'] <- 'White'
-  df$RACE[df$RACE == 'HISPANIC'] <- 'Hispanic'
-  return(df)
-}
-
-#fix race names
+#fix race names using helper function
 pretrial_raw <- fix_race_names_function(pretrial_raw)
 
-#clean names, set variable types, fix dates
-pretrial_raw <- pretrial_raw %>% 
-  clean_names() %>% 
-  mutate(identifier = as.character(identifier),
-         race = as.factor(race),
-         gender = as.factor(gender),
-         age = as.numeric(age),
-         offense = as.character(offense),
-         facility = as.factor(facility),
-         detainer = as.factor(detainer),
-         download_date = as.Date(download_date, '%m/%d/%Y'),
-         latest_admission_date = as.Date(latest_admission_date, '%m/%d/%Y')) %>% 
-  dplyr::rename(pretrial_age = age,
-         pretrial_facility = facility,
-         pretrial_detainer =  detainer,
-         pretrial_download_date = download_date, 
-         pretrial_latest_admission_date = latest_admission_date)
+#clean names, set variable types, fix dates using helper function
+pretrial_raw <- pretrial_names_variable_types_dates_cleaning_function(pretrial_raw)
 
+#create clean df to work with from here on out
 pretrial_clean <- pretrial_raw
-```
 
-
-```{r remove inconsistently coded race and gender observations}
-#create dfs of unique people
-pretrial_people <- unique(pretrial_clean[,c("identifier", "race", "gender")])
-
-#get difference between number of unique people, and number of unique people by race and gender as well to see if some people are being coded multiple times as different races/genders
-nrow(pretrial_people) - length(unique(pretrial_clean[,"identifier"])) 
-
-
-#exclude the people coded with different race and/or genders from both pretrial and sentenced dfs
-exclude_inconsistent_people_vec <- pretrial_people$identifier[duplicated(pretrial_people$identifier)]
-
-pretrial_clean <- pretrial_clean %>% 
-  filter(!identifier %in% exclude_inconsistent_people_vec)
+#remove inconsistently coded race and gender observations
+pretrial_clean <- remove_inconsistently_coded_people_function(pretrial_clean)
 ```
 
 ```{r get one observation per charge for the pretrial detention dataset}
@@ -158,9 +123,9 @@ pretrial_clean_1charge <- pretrial_clean_1charge %>%
 #create a new modeling df
 pretrial_modeling_df <- pretrial_clean_1charge
 
-#only select relevant variables
+#only dplyr::select relevant variables
 pretrial_modeling_df <- pretrial_modeling_df %>% 
-  select(identifier,
+  dplyr::dplyr::select(identifier,
          race,
          gender,
          pretrial_age,
@@ -179,20 +144,29 @@ pretrial_modeling_df <- pretrial_modeling_df %>%
   group_by(identifier) %>%
   arrange(earliest_pretrial_download_date) %>% 
   mutate(charge_count = 1:n()) %>% 
-  select(1:number_pretrial_detention_charges, charge_count, everything())
+  dplyr::select(1:number_pretrial_detention_charges, charge_count, everything())
 
 #create indicator noting the person was arrested more than once
 pretrial_modeling_df <- pretrial_modeling_df %>% 
   group_by(identifier) %>%
   mutate(multiple_charges = ifelse(number_pretrial_detention_charges > 1, 1, 0)) %>% 
-  select(1:charge_count, multiple_charges, everything())
+  dplyr::select(1:charge_count, multiple_charges, everything())
   
 #calculate time between each charge
 pretrial_modeling_df <- pretrial_modeling_df %>% 
   group_by(identifier) %>%
   arrange(earliest_pretrial_download_date) %>% 
   mutate(time_since_last_charge = earliest_pretrial_download_date - lag(earliest_pretrial_download_date)) %>% 
-  select(1:multiple_charges, time_since_last_charge, everything())
+  dplyr::select(1:multiple_charges, time_since_last_charge, everything())
+
+#create indicator noting whether person was arrested within year of previous charge. dont count charges if they occur on the same date
+pretrial_modeling_df <- pretrial_modeling_df %>% 
+  group_by(identifier) %>%
+  mutate(arrested_again_within_year = lead(case_when(time_since_last_charge >= 1 & time_since_last_charge <= 365 ~ 1,
+                                                  TRUE ~ 0))) %>% 
+  mutate(arrested_again_within_year = replace(arrested_again_within_year, is.na(arrested_again_within_year), 0)) %>% 
+  dplyr::select(1:time_since_last_charge, arrested_again_within_year, everything())
+
 
 #ungroup
 pretrial_modeling_df <- pretrial_modeling_df %>% 
@@ -203,7 +177,7 @@ pretrial_modeling_df <- pretrial_modeling_df %>%
 #conduct cluster analysis, excluding those with life sentences
 pretrial_modeling_df_cluster <- pretrial_modeling_df %>% 
   ungroup() %>% 
-  select(pretrial_age, pretrial_detention_length, bond_amount, number_pretrial_detention_charges)
+  dplyr::select(pretrial_age, pretrial_detention_length, bond_amount, number_pretrial_detention_charges)
 
 fviz_nbclust(head(pretrial_modeling_df_cluster, 10000), kmeans, method = "silhouette")
 
@@ -212,24 +186,31 @@ k1 <- kmeans(pretrial_modeling_df_cluster, centers = 2)
 fviz_cluster(k1, data = pretrial_modeling_df_cluster)
 ```
 
-```{r create model to try to predict number of charges the person will have}
+```{r create model to try to predict whether person will be charged multiple times}
 #questions 
   # do i need one row per identifier?
+#The goal here is to predict whether someone will have subsequent arrests within the same year after their pretrial detention
+#set arrested_again_within_year, the value we're trying to predict, to be a 0/1 factor
+pretrial_modeling_df_ml <- pretrial_modeling_df %>% 
+  mutate(arrested_again_within_year = as.factor(arrested_again_within_year))
 
-pretrial_modeling_df <- pretrial_modeling_df %>% 
-  mutate(multiple_charges = as.factor(multiple_charges))
 
+#summarize arrested_again_within_year to view
+pretrial_modeling_df_ml %>% 
+  count(arrested_again_within_year) %>% 
+  mutate(prop = n/sum(n))
+  
 #set seed
 set.seed(29)
 
 #split data into training and test, using a 4/5 proportion
-data_split <- initial_split(pretrial_modeling_df, prop = 4/5)
+data_split <- initial_split(pretrial_modeling_df_ml, prop = 4/5)
 train_data <- training(data_split)
 test_data <- testing(data_split)
 
 #create recipe for model - Note: I dont use offense because it has so many levels it takes the model a long time to run
 number_charges_recipe <- 
-  recipe(multiple_charges ~ race + gender + offense + pretrial_age + bond_amount + pretrial_detention_length + identifier, data = train_data) %>% #set outcome & predicter variables
+  recipe(arrested_again_within_year ~ race + gender + offense + pretrial_age + bond_amount + pretrial_detention_length + charge_count + identifier, data = train_data) %>% #set outcome & predicter variables
   update_role(identifier, new_role = "ID") %>% #set identifier as id
   step_zv(all_predictors()) #remove columns from data when training data set have a single value (potentially the case for more rare offenses)
 summary(number_charges_recipe)
@@ -260,19 +241,46 @@ number_charges_pred <-
   predict(number_charges_fit, test_data, type = "prob") %>% 
   bind_cols(test_data)
 
+#set threshold for prediction
+threshold <- 0.214
+number_charges_pred <- number_charges_pred %>% 
+  mutate(prediction = as.factor(ifelse(.pred_1 > threshold, 1, 0))) %>% 
+  dplyr::select(1:.pred_1, prediction, everything())
+
+
 #roc curve
 number_charges_pred %>% 
-  roc_curve(truth = multiple_charges, .pred_1) %>% 
+  roc_curve(truth = arrested_again_within_year, .pred_1) %>% 
   autoplot()
 
 #area under curve
 number_charges_pred %>% 
-  roc_auc(truth = multiple_charges, .pred_1)
+  roc_auc(truth = arrested_again_within_year, .pred_1)
+
+#precision recall curve
+number_charges_pred %>% 
+  pr_curve(truth = arrested_again_within_year, .pred_1) %>% 
+  autoplot()
 
 #confusion matrix
-number_charges_pred %>% 
-  conf_mat(multiple_charges, .pred_1)
+cmat <- number_charges_pred %>%
+  conf_mat(truth = "arrested_again_within_year", estimate = "prediction")
+cmat
+summary(cmat)
+
+
+median(number_charges_pred$.pred_1, na.rm = TRUE)
 ```
 
+```{r tables of summary stats for paper}
+library(stargazer)
+
+t1 <- pretrial_clean_1charge %>% 
+  as.data.frame() %>% 
+  dplyr::select(pretrial_detention_length, pretrial_age) %>% 
+  stargazer(type = "text",
+                summary.stat = c("min", "p25", "median", "p75", "max", "median", "sd"),
+                out = "stargazer_table1.html")
+```
 
 

@@ -10,7 +10,7 @@ editor_options:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
-library(tidyverse)
+
 library(janitor)
 library(data.table)
 library(RSocrata)
@@ -27,11 +27,14 @@ library(viridis)
 library(hexbin)
 library(sandwich)
 library(stargazer)
-
 library(sf)
 library(ggpubr)
 library(scales)
 options(scipen=999)
+library(tidyverse)
+
+#load functions from helper files
+source("Helper_functions/Data_loading_and_cleaning_functions.R")
 ```
 
 ```{r Load files, message=FALSE, warning=FALSE}
@@ -101,6 +104,7 @@ sentenced_charges10 <- sentenced_charges %>%
   arrange(-perc) %>% 
   head(10)
 
+
 #fix up offense
 sentenced_charges10$offense <- tolower(sentenced_charges10$offense)
 sentenced_charges10$offense <- str_remove(sentenced_charges10$offense, " df")
@@ -126,6 +130,8 @@ ggplot(data = sentenced_charges10, aes(x = offense, y = perc)) +
   ggtitle("Why Are People in Prison? (Top 10 Charges)", subtitle = "Data Available via Connecticut Open Data")
 ggsave("Graphs/sentenced_reasons_for_arrest.png", width=7, height=4.5, dpi=900)
 
+#crosstabs
+sentenced_charges10
 ```
 
 
@@ -162,6 +168,13 @@ ggplot(data = CT_sentenced_people_deduped, aes(race, fill=gender)) +
        caption="The total number of unique prison inmates in this time period is INSERT; I present data for INSERT here.\n(I exclude 57 individuals who are coded inconsistently by race or gender over time).\nThe dataset codes Hispanic as a race (this is different than, say, the Census methodology).") +
   ggtitle("Gender and Race of Connecticut Sentenced Inmates (INSERT DATE)", subtitle = "Data Available via Connecticut Open Data")
 ggsave("Graphs/sentenced_gender_race.png", width=7, height=4.5, dpi=900)
+
+#summary stats - gender
+tabyl(CT_sentenced_people_deduped, gender)
+
+#summary stats - race
+tabyl(CT_sentenced_people_deduped, race) 
+
 ```
 
 ```{r Compare race to CT population }
@@ -241,6 +254,12 @@ CT_5_7_2020 %>%
     #scale_x_continuous(limits=c(15,81), breaks=seq(15,80,5))+ 
     ggtitle("Sentence Lengths of Connecticut Sentenced Inmates (5/7/2020)", subtitle = "Data Available via Connecticut Open Data")
 ggsave("Graphs/sentenced_sentence_length-05-07-20.png", width=8, height=5, dpi=900)
+
+#count people with life sentences
+CT_5_7_2020 %>% 
+  filter(sentence_days > 36897) %>% 
+  distinct(identifier, offense, latest_admission_date) %>% 
+  nrow()
 ```
 
 ```{r Plot average sentence by race for all people in dataset}
@@ -280,6 +299,6 @@ CTsentenced_raw_sentence_date_calcs <- CT_sentenced_raw %>%
 
 
 CTsentenced_raw_sentence_date_calcs %>% 
-       select(download_date, end_sentence_date, latest_admission_date, sentence_days, calculated_sentence_date, offense)
+       dplyr::select(download_date, end_sentence_date, latest_admission_date, sentence_days, calculated_sentence_date, offense)
 ```
 
