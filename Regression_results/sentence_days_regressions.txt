@@ -1,4 +1,4 @@
-[1] "OLS"
+[1] "OLS sentence days"
 
 Call:
 lm(formula = sentence_days ~ bond_amount + pretrial_detention_length + 
@@ -10,15 +10,15 @@ Residuals:
 
 Coefficients:
                                                               Estimate    Std. Error t value             Pr(>|t|)    
-(Intercept)                                              -509.19893785  797.13471219  -0.639              0.52297    
+(Intercept)                                              -538.82561319  793.50541364  -0.679              0.49712    
 bond_amount                                                 0.00019886    0.00002963   6.711        0.00000000002 ***
 pretrial_detention_length                                   0.88855297    0.04919976  18.060 < 0.0000000000000002 ***
-raceBlack                                                 -19.54116693   76.62741243  -0.255              0.79871    
-raceHispanic                                              -36.60233008   76.97369472  -0.476              0.63443    
-raceNative American                                      -110.11201377  155.03795701  -0.710              0.47758    
-raceWhite                                                 -23.19187862   76.62870452  -0.303              0.76216    
+raceAsian                                                  23.19187862   76.62870452   0.303              0.76216    
+raceBlack                                                   3.65071169   16.36638283   0.223              0.82349    
+raceHispanic                                              -13.41045145   17.90358899  -0.749              0.45385    
+raceNative American                                       -86.92013515  135.72635306  -0.640              0.52192    
 pretrial_age                                                0.90279148    0.60778458   1.485              0.13747    
-genderM                                                    -6.43479671   19.01986816  -0.338              0.73513    
+genderF                                                     6.43479671   19.01986816   0.338              0.73513    
 pretrial_offense(REPEALED) 53-173                         500.89295315  886.84761217   0.565              0.57222    
 pretrial_offense53A021                                    437.07248091  799.33074271   0.547              0.58453    
 pretrial_offenseACT OF TERRORISM-ENHANCE SENT             360.80290798 1121.41089676   0.322              0.74765    
@@ -218,6 +218,226 @@ Residual standard error: 792.8 on 14068 degrees of freedom
 Multiple R-squared:  0.09332,	Adjusted R-squared:  0.07721 
 F-statistic: 5.792 on 250 and 14068 DF,  p-value: < 0.00000000000000022
 
+[1] "OLS sentenced"
+
+Call:
+lm(formula = sentenced ~ bond_amount + pretrial_detention_length + 
+    race + pretrial_age + gender + pretrial_offense, data = .)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-0.97268 -0.25377 -0.13185  0.00522  1.12728 
+
+Coefficients:
+                                                               Estimate     Std. Error t value             Pr(>|t|)    
+(Intercept)                                              -0.26525237725  0.39322335477  -0.675              0.49997    
+bond_amount                                               0.00000001219  0.00000001468   0.830              0.40661    
+pretrial_detention_length                                 0.00052083659  0.00002438105  21.362 < 0.0000000000000002 ***
+raceAsian                                                -0.02458855603  0.03797352324  -0.648              0.51731    
+raceBlack                                                -0.01635175492  0.00811039705  -2.016              0.04380 *  
+raceHispanic                                             -0.00771599165  0.00887216294  -0.870              0.38449    
+raceNative American                                      -0.04291470344  0.06725949309  -0.638              0.52345    
+pretrial_age                                              0.00133289402  0.00030118899   4.425            0.0000097 ***
+genderF                                                   0.02231205355  0.00942533754   2.367              0.01793 *  
+pretrial_offense(REPEALED) 53-173                         0.21195373186  0.43947928676   0.482              0.62961    
+pretrial_offense53A021                                    0.19028250232  0.39611010942   0.480              0.63097    
+pretrial_offenseACT OF TERRORISM-ENHANCE SENT             0.16129436227  0.55571763887   0.290              0.77163    
+pretrial_offenseAGGAVTD SEX ASSLT-VCTM < 13YR AF          0.20333250117  0.43045129574   0.472              0.63667    
+pretrial_offenseALTERING OR REMOVING IDENT NUMBER F       0.31994651369  0.40317117148   0.794              0.42746    
+pretrial_offenseARREST WARRANT                            0.19778441040  0.39954414480   0.495              0.62059    
+pretrial_offenseARREST WITHOUT WARRANT                    0.21909584528  0.39390820519   0.556              0.57808    
+pretrial_offenseARSON, FIRST DEGREE AF                    0.21376997487  0.39924748961   0.535              0.59236    
+pretrial_offenseARSON, SECOND DEGREE BF                   0.04595388538  0.43050682377   0.107              0.91499    
+pretrial_offenseARSON, THIRD DEGREE CF                    0.47563741575  0.41426206546   1.148              0.25092    
+pretrial_offenseASSAULT 2ND DEGREE WITH A FIREARM DF      0.37020840191  0.40905009792   0.905              0.36546    
+pretrial_offenseASSAULT 2ND WITH MV WHILE INTOXICATED DF  0.55394206543  0.40678560914   1.362              0.17330    
+pretrial_offenseASSAULT 2ND, VICTIM 60 OR OVER DF         0.17242205314  0.40111403189   0.430              0.66731    
+pretrial_offenseASSAULT 2ND, VICTIM 60+, WITH FIREARM DF  0.18675711781  0.48138324342   0.388              0.69805    
+pretrial_offenseASSAULT 3RD DEGREE, VICTIM OVER 59 AM     0.22024070940  0.39714777975   0.555              0.57921    
+pretrial_offenseASSAULT ON POLICE OR FIRE OFFICER CF      0.32116496760  0.39369435767   0.816              0.41464    
+pretrial_offenseASSAULT, 1ST VICTIM 60 OR OVER BF         0.22779782217  0.39760342764   0.573              0.56670    
+pretrial_offenseASSAULT, FIRST DEGREE BF                  0.35896825094  0.39359397043   0.912              0.36177    
+pretrial_offenseASSAULT, ON DOC EMPLOYEE BF               0.18783788768  0.48128776107   0.390              0.69633    
+pretrial_offenseASSAULT, SECOND DEGREE DF                 0.39160371447  0.39383847215   0.994              0.32008    
+pretrial_offenseASSAULT, THIRD DEGREE AM                  0.33321446616  0.39352262727   0.847              0.39715    
+pretrial_offenseBREACH OF PEACE 1ST DEG DF                0.19782217969  0.55573381902   0.356              0.72187    
+pretrial_offenseBREACH OF PEACE BM                        0.27155202111  0.39591683030   0.686              0.49280    
+pretrial_offenseBURGLARY, FIRST DEGREE BF                 0.42190937298  0.39459832271   1.069              0.28499    
+pretrial_offenseBURGLARY, FIRST DEGREE: 53A101A(2) BF     0.24566747545  0.41042894785   0.599              0.54947    
+pretrial_offenseBURGLARY, SECOND DEGREE CF                0.44702604106  0.39456239408   1.133              0.25725    
+pretrial_offenseBURGLARY, SECOND DEGREE WITH FIREARM CF   0.50378320170  0.45375691602   1.110              0.26691    
+pretrial_offenseBURGLARY, THIRD DEGREE DF                 0.46345024015  0.39359800697   1.177              0.23903    
+pretrial_offenseCAPITAL FELONY F                         -0.06830726561  0.45499036589  -0.150              0.88066    
+pretrial_offenseCARRY PIST/RVOLV W/O PERMIT               0.35873515726  0.39856835058   0.900              0.36810    
+pretrial_offenseCARRYING OR SALE OF DANGEROUS WEAPON      0.31775053995  0.39696870489   0.800              0.42347    
+pretrial_offenseCARRYING WEAPON IN A MOTOR VEHICLE F      0.34873092977  0.39594385019   0.881              0.37846    
+pretrial_offenseCARRYING WEAPONS WITHOUT A PERMIT F       0.41314223510  0.39968906158   1.034              0.30131    
+pretrial_offenseCHEATING AT GAMBLING                      0.24515248836  0.55705179820   0.440              0.65988    
+pretrial_offenseCOMMIT SEXUAL OFF IN ANOTHER JURIS DF     0.82908415431  0.45386190277   1.827              0.06776 .  
+pretrial_offenseCONSPIRACY                                0.27838607967  0.39508667425   0.705              0.48106    
+pretrial_offenseCONVEY UNAUTHZD ITEMS INTO INST DF        0.60117923617  0.43055959744   1.396              0.16265    
+pretrial_offenseCREATING A PUBLIC DISTURBANCE             0.20074044204  0.55584386807   0.361              0.71800    
+pretrial_offenseCREDIT CARD THEFT                         0.40185806767  0.40684923686   0.988              0.32330    
+pretrial_offenseCRIM VIOL CIVIL PROTECTION ORDER DF       0.43180201699  0.39731585323   1.087              0.27714    
+pretrial_offenseCRIM VIOL OF PROTECTIVE ORDER AM          0.36045509440  0.39447922843   0.914              0.36086    
+pretrial_offenseCRIM VIOL OF PROTECTIVE ORDER DF          0.35858826475  0.39327861616   0.912              0.36189    
+pretrial_offenseCRIM VIOL RES ORDER AM                    0.37556156883  0.39567671329   0.949              0.34255    
+pretrial_offenseCRIM VIOL ST CRIM RESTR ORDER DF          0.33139247393  0.39535876408   0.838              0.40193    
+pretrial_offenseCRIMINAL ATTEMPT                          0.23552632690  0.39425223637   0.597              0.55025    
+pretrial_offenseCRIMINAL IMPERSONATION BM                 0.28833851170  0.40084024948   0.719              0.47195    
+pretrial_offenseCRIMINAL LIABILITY FOR ANOTHER PERSON     0.11188612598  0.41416763219   0.270              0.78705    
+pretrial_offenseCRIMINAL MISCHIEF, FIRST DEGREE DF        0.35231570858  0.39720775580   0.887              0.37510    
+pretrial_offenseCRIMINAL MISCHIEF, SECOND DEGREE AM       0.24862858857  0.40380983422   0.616              0.53810    
+pretrial_offenseCRIMINAL MISCHIEF, THIRD DEGREE BM        0.28633595368  0.40154518642   0.713              0.47580    
+pretrial_offenseCRIMINAL POSS OF PISTOL/REVOLVER DF       0.41688268756  0.39409976932   1.058              0.29016    
+pretrial_offenseCRIMINAL POSSESSION OF A PISTOL DF        0.41769877455  0.39383550636   1.061              0.28889    
+pretrial_offenseCRIMINAL TRESPASS, FIRST DEGREE AM        0.30583577760  0.39462620677   0.775              0.43835    
+pretrial_offenseCRIMINAL TRESPASS, SECOND DEGREE BM       0.21224198606  0.43055447535   0.493              0.62206    
+pretrial_offenseCRIMINAL TRESPASS, THIRD DEGREE CM        0.41286172785  0.41433622296   0.996              0.31905    
+pretrial_offenseCRIMINAL TROVER, 1ST DEGREE F             0.17342228577  0.45389162741   0.382              0.70241    
+pretrial_offenseCRIMINAL TROVER, 2ND DEGREE AM            0.24577137355  0.55581735262   0.442              0.65837    
+pretrial_offenseCRIMINAL USE OF A FIREARM DF             -0.00398304845  0.55570352512  -0.007              0.99428    
+pretrial_offenseCRIMINALLY NEGLIGENT HOMICIDE AM          0.18971659881  0.55568421108   0.341              0.73280    
+pretrial_offenseCRUELTY TO ANIMALS                        0.46971533738  0.41430332085   1.134              0.25692    
+pretrial_offenseCRUELTY TO PERSONS                        0.17439026011  0.45382876284   0.384              0.70079    
+pretrial_offenseCUSTODIAL INTERFERENCE, FIRST DEGREE DF   0.20888436434  0.48133038509   0.434              0.66431    
+pretrial_offenseDISORDERLY CONDUCT CM                     0.27493002843  0.39557095853   0.695              0.48705    
+pretrial_offenseDISSEMINATING VOYEURISTIC MATERIAL DF     0.42313428781  0.43941882202   0.963              0.33559    
+pretrial_offenseDRINKING WHILE OPERATING MOTOR VEHICL CM  0.22767614318  0.55577172335   0.410              0.68206    
+pretrial_offenseDRIVING IMPROPERLY ON MULTI-LANE HWY      0.18475857673  0.55588495114   0.332              0.73962    
+pretrial_offenseDRIVING WHILE LICENSE SUSP FOR DWI        0.37587147379  0.40158257676   0.936              0.34930    
+pretrial_offenseDRUG PARAPHERNALIA IN DRUG FACTORY F      0.41289651440  0.39756044258   1.039              0.29902    
+pretrial_offenseEMPLOYING MINOR IN OBSCENE PERFORMNCE AF -0.10759428338  0.45376083496  -0.237              0.81257    
+pretrial_offenseENTICING A MINOR                         -0.00426762602  0.55573941781  -0.008              0.99387    
+pretrial_offenseESCAPE FROM CUSTODY                       0.51383733835  0.45434655565   1.131              0.25810    
+pretrial_offenseESCAPE, FIRST DEGREE CF                   1.15841405547  0.41428043269   2.796              0.00518 ** 
+pretrial_offenseEVADING RESPONSIBILITY M                  0.24924662705  0.39808412126   0.626              0.53125    
+pretrial_offenseEXTRADITION                               0.18495742389  0.55576050651   0.333              0.73929    
+pretrial_offenseFAILURE TO APPEAR, FIRST DEGREE DF        0.41026105232  0.39363873633   1.042              0.29732    
+pretrial_offenseFAILURE TO APPEAR, SECOND DEGREE AM       0.32199737767  0.39335126031   0.819              0.41303    
+pretrial_offenseFAILURE TO COMPLY W/ SEAT BELTS/SYSTEM    0.23945406440  0.55580752586   0.431              0.66660    
+pretrial_offenseFAILURE TO OBEY AN OFFICER                0.36603423104  0.41053044119   0.892              0.37262    
+pretrial_offenseFAILURE TO PAY OR PLEAD M                 0.41877101655  0.39489357322   1.060              0.28895    
+pretrial_offenseFALSE ENTRY BY OFFICER OR PUB AGENT AM    0.11366902703  0.55580240171   0.205              0.83796    
+pretrial_offenseFALSE STATEMENT, 2ND DEGREE AM            0.68225921582  0.48128921620   1.418              0.15634    
+pretrial_offenseFALSELY REPORTING AN INCIDENT 2ND AM      0.18678899896  0.55579024757   0.336              0.73682    
+pretrial_offenseFALSELY REPORTING INCIDENT                0.18478715693  0.43944600939   0.421              0.67413    
+pretrial_offenseFEDERAL OFFENSE                          -0.04732437158  0.55576572751  -0.085              0.93214    
+pretrial_offenseFELONY MURDER AF                          0.14547397886  0.39996738345   0.364              0.71608    
+pretrial_offenseFLR KEEP NARC IN ORG CONTAINER F          0.26914554592  0.40915384631   0.658              0.51067    
+pretrial_offenseFORGERY, FIRST DEGREE CF                  0.29355108332  0.39671716527   0.740              0.45934    
+pretrial_offenseFORGERY, SECOND DEGREE DF                 0.48303265971  0.39621256552   1.219              0.22282    
+pretrial_offenseFORGERY, THIRD DEGREE BM                  0.54738572617  0.43060331977   1.271              0.20368    
+pretrial_offenseFRAUDULENT USE OF ATM CM                  0.18067639050  0.55576768054   0.325              0.74512    
+pretrial_offenseHARASSMENT 1ST DEGREE DF                  0.31010311861  0.41434847465   0.748              0.45422    
+pretrial_offenseHARASSMENT, 2ND DEGREE CM                 0.18232900889  0.41701617671   0.437              0.66196    
+pretrial_offenseHINDER PROSECUTION DEFINED F              0.17570150296  0.55584650330   0.316              0.75193    
+pretrial_offenseHINDER PROSECUTION, FIRST DEGREE DF       0.64651344765  0.45370112043   1.425              0.15419    
+pretrial_offenseHINDERING PROSECUTION 2ND DEG             0.18853490848  0.41225403775   0.457              0.64744    
+pretrial_offenseHOME INVASION AF                          0.23224832805  0.39458950352   0.589              0.55615    
+pretrial_offenseIDENTITY THEFT 1ST DEGREE BF              0.45779888838  0.40443433339   1.132              0.25768    
+pretrial_offenseIDENTITY THEFT 2ND DEGREE CF              0.44934049910  0.40690819349   1.104              0.26949    
+pretrial_offenseIDENTITY THEFT 3RD DEGREE DF              0.33279855792  0.39690722895   0.838              0.40178    
+pretrial_offenseIL POS LRG CAP MAG OBT AF 4/13 DF         0.19732245346  0.43936369417   0.449              0.65336    
+pretrial_offenseIL TRAFFIC IN PERSONAL ID INFO DF         0.21921186224  0.55572392128   0.394              0.69325    
+pretrial_offenseILL OP MV WO IGNITION DEVICE CM           0.22065808375  0.39921014462   0.553              0.58045    
+pretrial_offenseILL POSSESS CHILD PORN 2ND DEG F          0.61161247510  0.42451911771   1.441              0.14969    
+pretrial_offenseILL POSSESS CHILD PORN 3RD DEG DF         0.12239577096  0.45381113356   0.270              0.78739    
+pretrial_offenseILLEGAL MANUFACTUAL OR SALE OF DRUGS      0.18690922796  0.41220524526   0.453              0.65024    
+pretrial_offenseILLEGAL POSSES OF SHOP LIFTING DEVICE AM  0.68885841007  0.48136928160   1.431              0.15244    
+pretrial_offenseILLEGAL REFUSAL OF DNA TESTING            0.21118971597  0.43056942335   0.490              0.62380    
+pretrial_offenseILLEGAL USE OF CREDIT CARD                0.20670292673  0.42457011165   0.487              0.62637    
+pretrial_offenseIMPERSONATION OF POLICE OFFICER DF        0.16690994159  0.48137849997   0.347              0.72880    
+pretrial_offenseIMPORTING CHILD PORNOGRAPHY F             0.01671994734  0.55571658703   0.030              0.97600    
+pretrial_offenseIMPROPER USE OF MARKER, LICENSE, REG M    0.22251148074  0.45385932787   0.490              0.62395    
+pretrial_offenseINCITING INJURY TO PERSONS OR PROPTY CF   0.16434933280  0.43940467164   0.374              0.70839    
+pretrial_offenseINJUNCTION AND RESTRAINING ORDER          0.18715161896  0.43055239940   0.435              0.66380    
+pretrial_offenseINJURY OR RISK OF INJURY TO MINOR F       0.27813370900  0.39338362623   0.707              0.47956    
+pretrial_offenseINJURY/RISK OF INJURY TO MINOR- SEXUAL C  0.22402846188  0.40266857528   0.556              0.57797    
+pretrial_offenseINTERFERENCE WITH SEARCH                  0.31316222288  0.42026400705   0.745              0.45619    
+pretrial_offenseINTERFERING WITH AN EMERGENCY CALL AM     0.18439198297  0.42019933398   0.439              0.66080    
+pretrial_offenseINTERFERING WITH AN OFFICER AM            0.32520990827  0.39365890434   0.826              0.40875    
+pretrial_offenseINTERSTATE PAROLE COMPACT                 0.17261499191  0.48133828533   0.359              0.71989    
+pretrial_offenseINTIMIDATE DUE TO BIAS 3RD DEG AM         0.16635233078  0.48130131871   0.346              0.72963    
+pretrial_offenseINTIMIDATING A WITNESS CF                 0.33665749145  0.41692180195   0.807              0.41940    
+pretrial_offenseINTIMIDATION BSD BIGOTRY/BIAS DF          0.15700938526  0.48132398258   0.326              0.74428    
+pretrial_offenseISSUING A BAD CHECK                       0.17604814069  0.48142801091   0.366              0.71461    
+pretrial_offenseJUVENILE TRANSFER                         0.13480577422  0.39718489722   0.339              0.73431    
+pretrial_offenseKIDNAPPING 1ST DEG W/ FIREARM AF          0.42270547752  0.43039760110   0.982              0.32605    
+pretrial_offenseKIDNAPPING 2ND DEG W/ FIREARM BF          0.17192113341  0.48129652466   0.357              0.72094    
+pretrial_offenseKIDNAPPING, 2ND DEGREE BF                 0.29728880729  0.40671763813   0.731              0.46482    
+pretrial_offenseKIDNAPPING, FIRST DEGREE AF               0.27111798893  0.39965038929   0.678              0.49754    
+pretrial_offenseLARCENY, FIFTH DEGREE BM                  0.58918187295  0.40117776975   1.469              0.14196    
+pretrial_offenseLARCENY, FIRST DEGREE BF                  0.44222962504  0.39407025391   1.122              0.26179    
+pretrial_offenseLARCENY, FOURTH DEGREE AM                 0.52860454453  0.39773374590   1.329              0.18386    
+pretrial_offenseLARCENY, SECOND DEGREE CF                 0.47266091069  0.39414495223   1.199              0.23047    
+pretrial_offenseLARCENY, SIXTH DEGREE CM                  0.52768936647  0.39484459068   1.336              0.18142    
+pretrial_offenseLARCENY, THIRD DEGREE DF                  0.49902929726  0.39381324472   1.267              0.20511    
+pretrial_offenseLEAV CHILD UNSUPERV IN PUBL/MOT VEH C     0.35003955171  0.40588915918   0.862              0.38848    
+pretrial_offenseLIQUOR SALES TO MINORS                    0.22393401739  0.55580037066   0.403              0.68703    
+pretrial_offenseMANSLAUGHTER 2ND WITH MV (INTOX) CF       0.51870185627  0.40781828484   1.272              0.20343    
+pretrial_offenseMANSLAUGHTER, FIRST DEGREE BF             0.33249807290  0.40011877741   0.831              0.40599    
+pretrial_offenseMANSLAUGHTER, FIRST DEGREE, FIREARM BF    0.28000422767  0.40780963758   0.687              0.49234    
+pretrial_offenseMANSLAUGHTER, SECOND DEGREE CF            0.27436645728  0.41212975444   0.666              0.50560    
+pretrial_offenseMANUF OR POSSESSION OF BURGLAR TOOLS AM   0.20550701937  0.43059521304   0.477              0.63318    
+pretrial_offenseMANUFACTURE OF BOMBS BF                   0.04774237778  0.45374554777   0.105              0.91620    
+pretrial_offenseMISCONDUCT WITH A MOTOR VEHICLE DF        0.17284572473  0.48129392038   0.359              0.71951    
+pretrial_offenseMISREP AGE TO ENTICE A MINOR CF          -0.00426762602  0.55573941781  -0.008              0.99387    
+pretrial_offenseMISREP OF SUB AS CONTROLLED SUB DF        0.36784023703  0.43054345836   0.854              0.39292    
+pretrial_offenseMONEY LAUNDERING 2ND DEGREE CF            0.09115464091  0.48124944981   0.189              0.84977    
+pretrial_offenseMURDER AF                                 0.01852224219  0.39446058692   0.047              0.96255    
+pretrial_offenseNEGLG STORAGE OF A FIREARM DF             0.20626883690  0.55579970135   0.371              0.71055    
+pretrial_offenseNEGLIGENT HOMICIDE W/ MOTOR VEHICLE BM    0.62426165016  0.48131901948   1.297              0.19466    
+pretrial_offenseOBSCENITY AS TO MINORS F                  0.15634856556  0.55582301346   0.281              0.77849    
+pretrial_offenseOBSCENITY BM                              0.23163297618  0.55574095435   0.417              0.67683    
+pretrial_offenseOPERATE UNDER INFLU OF LIQ OR DRUGS       0.50278946902  0.39427594132   1.275              0.20225    
+pretrial_offenseOPERATE UNDER INFLU OF LIQ OR DRUGS M     0.35013498878  0.42456308565   0.825              0.40956    
+pretrial_offenseOPERATING MV W/O A LICENSE                0.22642245513  0.55577529016   0.407              0.68372    
+pretrial_offenseOPERATING UNDER SUSPENDED LIC OR REG. M   0.21218598879  0.39598403978   0.536              0.59207    
+pretrial_offenseORGANIZED RETAIL THEFT F                  0.19768759042  0.48132395102   0.411              0.68129    
+pretrial_offenseOUI MV W/CHILD PSNGR AM                   0.22805266275  0.55576911216   0.410              0.68156    
+pretrial_offenseP19-187                                   0.12266054447  0.39736691192   0.309              0.75757    
+pretrial_offensePERMIT TO SELL OR CARRY PISTOL            0.15970961748  0.48131641767   0.332              0.74003    
+pretrial_offensePOSS OF ASSAULT WEAPON PROHIBITED         0.16762699998  0.48134044872   0.348              0.72766    
+pretrial_offensePOSS OF WEAPON IN A CCI BF                0.02843123676  0.45368468566   0.063              0.95003    
+pretrial_offensePOSS WEAPON ON SCHOOL GROUNDS DF          0.49175268456  0.48121406796   1.022              0.30685    
+pretrial_offensePOSSESS OF HALLUC OR 4+ OZ MARIJUANA F    0.17897211725  0.43057606606   0.416              0.67767    
+pretrial_offensePOSSESSING CHILD PORNOGRAPH F             0.28596677306  0.40226833623   0.711              0.47717    
+pretrial_offensePOSSESSION OF NARCOTICS                   0.36187359616  0.39404408705   0.918              0.35845    
+pretrial_offensePOSSESSION OF SHOTGUN OR SILENCER DF      0.43068753603  0.43940071724   0.980              0.32702    
+pretrial_offensePRACTICE OF LAW BY NON-ATTORNEYS M        0.20405324562  0.55583186289   0.367              0.71354    
+pretrial_offensePRIMARY OFFENSE NOT DETERMINED            0.21750800433  0.40190777313   0.541              0.58839    
+pretrial_offensePROBATION AND CONDITIONAL DISCHARGE       0.21457058056  0.55571524635   0.386              0.69942    
+pretrial_offensePRODUCING CONTROLLED SUBS W/O LICENSE     0.20758443496  0.55578876116   0.373              0.70879    
+pretrial_offensePROHIB ACTS RE: CONTROLLED SUBSTANCES     0.16205111787  0.45377195093   0.357              0.72101    
+pretrial_offensePROHIB ACTS RE: DRUG PARAPHERNALIA        0.20208774629  0.41229987360   0.490              0.62404    
+pretrial_offensePROMOTING MINOR IN OBSCENE PERFORMNCE BF  0.41362961500  0.43934332059   0.941              0.34648    
+pretrial_offensePROMOTING PROSTITUTION, FIRST DEGREE BF   0.22054449812  0.55579796134   0.397              0.69152    
+pretrial_offensePROMOTING PROSTITUTION, SECOND DEGREE CF  0.16520985348  0.48133045893   0.343              0.73143    
+pretrial_offensePROSTITUTION AM                           0.44980766692  0.40337625636   1.115              0.26482    
+pretrial_offensePUBLIC INDECENCY BM                       0.38563122368  0.41429005714   0.931              0.35196    
+pretrial_offensePURGE CIVIL COMMITMENT                    0.24683357926  0.39901177023   0.619              0.53618    
+pretrial_offenseRAPE, SECOND DEGREE CF                    0.20407843565  0.48138777570   0.424              0.67162    
+pretrial_offenseRECKLESS BURNING DF                       0.19145888301  0.41227016724   0.464              0.64237    
+pretrial_offenseRECKLESS DRIVING M                        0.31570777121  0.41691440715   0.757              0.44891    
+pretrial_offenseRECKLESS ENDANGERMENT, FIRST DEGREE AM    0.29587083684  0.40229539233   0.735              0.46207    
+pretrial_offenseRECKLESS ENDANGERMENT, SECOND DEGREE BM   0.19618957829  0.41223199950   0.476              0.63414    
+pretrial_offenseREG PERSON WHO COMM OFF AGAINST MINOR DF  0.44138613832  0.41695463769   1.059              0.28980    
+pretrial_offenseREG PERSON WHO COMM SEX VIOL OFF DF       0.36415822508  0.40521857314   0.899              0.36884    
+pretrial_offenseRESISTING ARREST                          0.20167902567  0.55582657506   0.363              0.71673    
+pretrial_offenseROBBERY, FIRST DEGREE BF                  0.45032009756  0.39364209086   1.144              0.25265    
+pretrial_offenseROBBERY, SECOND DEGREE CF                 0.52320046093  0.39545523958   1.323              0.18585    
+pretrial_offenseROBBERY, THIRD DEGREE DF                  0.50368059213  0.39551693414   1.273              0.20287    
+pretrial_offenseSALE OF CONTROLLED SUBSTANCE F            0.26051994227  0.39738476763   0.656              0.51210    
+pretrial_offenseSALE OF HALLUCIGEN/NARCOTIC SUBSTANCE F   0.44493170048  0.39418337252   1.129              0.25903    
+ [ reached getOption("max.print") -- omitted 51 rows ]
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 0.3929 on 14068 degrees of freedom
+Multiple R-squared:  0.1078,	Adjusted R-squared:  0.09198 
+F-statistic: 6.801 on 250 and 14068 DF,  p-value: < 0.00000000000000022
+
 [1] "Bayes GLM"
 
 Call:
@@ -231,206 +451,206 @@ Deviance Residuals:
 
 Coefficients:
                                                                 Estimate      Std. Error z value             Pr(>|z|)    
-(Intercept)                                              -1.103918191368  0.209041057052  -5.281   0.0000001285734258 ***
+(Intercept)                                              -1.231860077795  0.208877208549  -5.898   0.0000000036897813 ***
 bond_amount                                               0.000000271363  0.000000001053 257.591 < 0.0000000000000002 ***
-pretrial_detention_length                                 0.002367044627  0.000002783392 850.417 < 0.0000000000000002 ***
-raceBlack                                                -0.266933728906  0.008373702671 -31.878 < 0.0000000000000002 ***
-raceHispanic                                             -0.348527082697  0.008420061999 -41.392 < 0.0000000000000002 ***
-raceNative American                                      -1.546732867691  0.029526858082 -52.384 < 0.0000000000000002 ***
-raceWhite                                                -0.265048993863  0.008382054488 -31.621 < 0.0000000000000002 ***
-pretrial_age                                              0.008465864253  0.000064283911 131.695 < 0.0000000000000002 ***
-genderM                                                   0.137108079973  0.002623061476  52.270 < 0.0000000000000002 ***
-pretrial_offense(REPEALED) 53-173                        -1.580584287608  1.457334803846  -1.085              0.27811    
-pretrial_offense53A021                                   -4.587748550951  1.651158208240  -2.779              0.00546 ** 
-pretrial_offenseACT OF TERRORISM-ENHANCE SENT            -1.012522288926  1.554609424125  -0.651              0.51485    
-pretrial_offenseAGGAVTD SEX ASSLT-VCTM < 13YR AF         -3.140861179589  1.499633409703  -2.094              0.03622 *  
-pretrial_offenseALTERING OR REMOVING IDENT NUMBER F       5.835534867403  0.209297310997  27.882 < 0.0000000000000002 ***
-pretrial_offenseARREST WARRANT                           -3.710814408157  1.554522849587  -2.387              0.01698 *  
-pretrial_offenseARREST WITHOUT WARRANT                   -5.969216781717  1.814831112642  -3.289              0.00100 ** 
-pretrial_offenseARSON, FIRST DEGREE AF                    4.347536518684  0.209728866053  20.729 < 0.0000000000000002 ***
-pretrial_offenseARSON, SECOND DEGREE BF                  -3.172342859165  1.502385182078  -2.112              0.03473 *  
-pretrial_offenseARSON, THIRD DEGREE CF                    6.214845174974  0.209729035363  29.633 < 0.0000000000000002 ***
-pretrial_offenseASSAULT 2ND DEGREE WITH A FIREARM DF      3.586340985935  0.216528385551  16.563 < 0.0000000000000002 ***
-pretrial_offenseASSAULT 2ND WITH MV WHILE INTOXICATED DF  4.924174442486  0.209783232329  23.473 < 0.0000000000000002 ***
-pretrial_offenseASSAULT 2ND, VICTIM 60 OR OVER DF        -3.921431565826  1.576620461048  -2.487              0.01287 *  
-pretrial_offenseASSAULT 2ND, VICTIM 60+, WITH FIREARM DF -1.305540231350  1.489965708305  -0.876              0.38091    
-pretrial_offenseASSAULT 3RD DEGREE, VICTIM OVER 59 AM     2.866553714166  0.215245997369  13.318 < 0.0000000000000002 ***
-pretrial_offenseASSAULT ON POLICE OR FIRE OFFICER CF      4.801401745554  0.208981496157  22.975 < 0.0000000000000002 ***
-pretrial_offenseASSAULT, 1ST VICTIM 60 OR OVER BF         5.071352290671  0.209293736183  24.231 < 0.0000000000000002 ***
-pretrial_offenseASSAULT, FIRST DEGREE BF                  6.113027762500  0.208878316441  29.266 < 0.0000000000000002 ***
-pretrial_offenseASSAULT, ON DOC EMPLOYEE BF              -1.315933753952  1.488309123855  -0.884              0.37660    
-pretrial_offenseASSAULT, SECOND DEGREE DF                 5.267619680480  0.208951133250  25.210 < 0.0000000000000002 ***
-pretrial_offenseASSAULT, THIRD DEGREE AM                  4.239043414925  0.209033727727  20.279 < 0.0000000000000002 ***
-pretrial_offenseBREACH OF PEACE 1ST DEG DF               -0.909865894531  1.587387021062  -0.573              0.56652    
-pretrial_offenseBREACH OF PEACE BM                        2.502785875791  0.215268486181  11.626 < 0.0000000000000002 ***
-pretrial_offenseBURGLARY, FIRST DEGREE BF                 5.917855582202  0.208941487483  28.323 < 0.0000000000000002 ***
-pretrial_offenseBURGLARY, FIRST DEGREE: 53A101A(2) BF    -3.448557627942  1.528049728741  -2.257              0.02402 *  
-pretrial_offenseBURGLARY, SECOND DEGREE CF                5.691324419456  0.208975600731  27.234 < 0.0000000000000002 ***
-pretrial_offenseBURGLARY, SECOND DEGREE WITH FIREARM CF   5.405251375294  0.215293361998  25.106 < 0.0000000000000002 ***
-pretrial_offenseBURGLARY, THIRD DEGREE DF                 5.860439886521  0.208894360538  28.055 < 0.0000000000000002 ***
-pretrial_offenseCAPITAL FELONY F                         -3.170455531265  1.502204750945  -2.111              0.03481 *  
-pretrial_offenseCARRY PIST/RVOLV W/O PERMIT               4.754952488092  0.210041716014  22.638 < 0.0000000000000002 ***
-pretrial_offenseCARRYING OR SALE OF DANGEROUS WEAPON      4.510367039013  0.209926838053  21.485 < 0.0000000000000002 ***
-pretrial_offenseCARRYING WEAPON IN A MOTOR VEHICLE F      4.681654073901  0.209509999227  22.346 < 0.0000000000000002 ***
-pretrial_offenseCARRYING WEAPONS WITHOUT A PERMIT F       5.133050585107  0.209584058827  24.492 < 0.0000000000000002 ***
-pretrial_offenseCHEATING AT GAMBLING                     -0.944086035486  1.575764474448  -0.599              0.54909    
-pretrial_offenseCOMMIT SEXUAL OFF IN ANOTHER JURIS DF     5.552035178303  0.214385188835  25.897 < 0.0000000000000002 ***
-pretrial_offenseCONSPIRACY                                4.905229818051  0.209119173728  23.457 < 0.0000000000000002 ***
-pretrial_offenseCONVEY UNAUTHZD ITEMS INTO INST DF        5.710997729662  0.212739615066  26.845 < 0.0000000000000002 ***
-pretrial_offenseCREATING A PUBLIC DISTURBANCE            -0.875860231870  1.599695875112  -0.548              0.58402    
-pretrial_offenseCREDIT CARD THEFT                         3.595735508253  0.219028437556  16.417 < 0.0000000000000002 ***
-pretrial_offenseCRIM VIOL CIVIL PROTECTION ORDER DF       5.504844000647  0.209322022330  26.298 < 0.0000000000000002 ***
-pretrial_offenseCRIM VIOL OF PROTECTIVE ORDER AM          5.183208621972  0.209049752208  24.794 < 0.0000000000000002 ***
-pretrial_offenseCRIM VIOL OF PROTECTIVE ORDER DF          5.125354756966  0.208891639388  24.536 < 0.0000000000000002 ***
-pretrial_offenseCRIM VIOL RES ORDER AM                    4.888762166306  0.209335424084  23.354 < 0.0000000000000002 ***
-pretrial_offenseCRIM VIOL ST CRIM RESTR ORDER DF          4.652468685150  0.209386832615  22.219 < 0.0000000000000002 ***
-pretrial_offenseCRIMINAL ATTEMPT                          5.271846423113  0.208932133475  25.232 < 0.0000000000000002 ***
-pretrial_offenseCRIMINAL IMPERSONATION BM                 3.318122646755  0.215258559931  15.415 < 0.0000000000000002 ***
-pretrial_offenseCRIMINAL LIABILITY FOR ANOTHER PERSON     3.725025893383  0.212092892868  17.563 < 0.0000000000000002 ***
-pretrial_offenseCRIMINAL MISCHIEF, FIRST DEGREE DF        4.453794619235  0.210095987638  21.199 < 0.0000000000000002 ***
-pretrial_offenseCRIMINAL MISCHIEF, SECOND DEGREE AM       2.726504746039  0.227445634401  11.988 < 0.0000000000000002 ***
-pretrial_offenseCRIMINAL MISCHIEF, THIRD DEGREE BM        1.113915999573  0.276082153089   4.035   0.0000546659180616 ***
-pretrial_offenseCRIMINAL POSS OF PISTOL/REVOLVER DF       5.724509043275  0.208916204042  27.401 < 0.0000000000000002 ***
-pretrial_offenseCRIMINAL POSSESSION OF A PISTOL DF        5.771893010821  0.208907540838  27.629 < 0.0000000000000002 ***
-pretrial_offenseCRIMINAL TRESPASS, FIRST DEGREE AM        2.537126182961  0.211969313411  11.969 < 0.0000000000000002 ***
-pretrial_offenseCRIMINAL TRESPASS, SECOND DEGREE BM      -1.808208627464  1.444510221671  -1.252              0.21065    
-pretrial_offenseCRIMINAL TRESPASS, THIRD DEGREE CM        2.067829126419  0.276821424696   7.470   0.0000000000000803 ***
-pretrial_offenseCRIMINAL TROVER, 1ST DEGREE F            -1.492574209797  1.465441348609  -1.019              0.30843    
-pretrial_offenseCRIMINAL TROVER, 2ND DEGREE AM           -0.731784054269  1.661304768165  -0.440              0.65958    
-pretrial_offenseCRIMINAL USE OF A FIREARM DF             -1.395877508289  1.476761604369  -0.945              0.34454    
-pretrial_offenseCRIMINALLY NEGLIGENT HOMICIDE AM         -0.943241363800  1.576036072483  -0.598              0.54951    
-pretrial_offenseCRUELTY TO ANIMALS                        5.788243797253  0.210043490719  27.557 < 0.0000000000000002 ***
-pretrial_offenseCRUELTY TO PERSONS                       -1.578800902984  1.457470486615  -1.083              0.27870    
-pretrial_offenseCUSTODIAL INTERFERENCE, FIRST DEGREE DF  -1.177634121532  1.513627884999  -0.778              0.43656    
-pretrial_offenseDISORDERLY CONDUCT CM                     0.965613563075  0.233375908888   4.138   0.0000350974526973 ***
-pretrial_offenseDISSEMINATING VOYEURISTIC MATERIAL DF     5.257787351251  0.215289856111  24.422 < 0.0000000000000002 ***
-pretrial_offenseDRINKING WHILE OPERATING MOTOR VEHICL CM -0.843723320416  1.612059026644  -0.523              0.60071    
-pretrial_offenseDRIVING IMPROPERLY ON MULTI-LANE HWY     -0.923664880015  1.582608891994  -0.584              0.55947    
-pretrial_offenseDRIVING WHILE LICENSE SUSP FOR DWI        4.413682494846  0.211967022025  20.822 < 0.0000000000000002 ***
-pretrial_offenseDRUG PARAPHERNALIA IN DRUG FACTORY F      3.546770516107  0.211441970721  16.774 < 0.0000000000000002 ***
-pretrial_offenseEMPLOYING MINOR IN OBSCENE PERFORMNCE AF -3.062350000479  1.492920833427  -2.051              0.04024 *  
-pretrial_offenseENTICING A MINOR                         -1.421710554122  1.473465126234  -0.965              0.33461    
-pretrial_offenseESCAPE FROM CUSTODY                      -1.380499762750  1.478843556704  -0.933              0.35056    
-pretrial_offenseESCAPE, FIRST DEGREE CF                   6.151283847137  0.209889463841  29.307 < 0.0000000000000002 ***
-pretrial_offenseEVADING RESPONSIBILITY M                  3.218813995354  0.214363958531  15.016 < 0.0000000000000002 ***
-pretrial_offenseEXTRADITION                              -0.902938935330  1.589832107832  -0.568              0.57007    
-pretrial_offenseFAILURE TO APPEAR, FIRST DEGREE DF        4.032844805349  0.209130249853  19.284 < 0.0000000000000002 ***
-pretrial_offenseFAILURE TO APPEAR, SECOND DEGREE AM       3.498977407950  0.209087819823  16.734 < 0.0000000000000002 ***
-pretrial_offenseFAILURE TO COMPLY W/ SEAT BELTS/SYSTEM   -0.764354605209  1.645915004974  -0.464              0.64236    
-pretrial_offenseFAILURE TO OBEY AN OFFICER                2.841998111251  0.233730314684  12.159 < 0.0000000000000002 ***
-pretrial_offenseFAILURE TO PAY OR PLEAD M                 3.771717916239  0.210024610560  17.958 < 0.0000000000000002 ***
-pretrial_offenseFALSE ENTRY BY OFFICER OR PUB AGENT AM   -1.095698954523  1.532326055612  -0.715              0.47457    
-pretrial_offenseFALSE STATEMENT, 2ND DEGREE AM           -1.319274570488  1.487784601858  -0.887              0.37522    
-pretrial_offenseFALSELY REPORTING AN INCIDENT 2ND AM     -0.816633319240  1.623064141648  -0.503              0.61486    
-pretrial_offenseFALSELY REPORTING INCIDENT               -1.778730532579  1.445577384536  -1.230              0.21852    
-pretrial_offenseFEDERAL OFFENSE                          -1.714782690310  1.448448116042  -1.184              0.23646    
-pretrial_offenseFELONY MURDER AF                          6.677589642088  0.208906718185  31.964 < 0.0000000000000002 ***
-pretrial_offenseFLR KEEP NARC IN ORG CONTAINER F         -2.681415671499  1.464691450299  -1.831              0.06714 .  
-pretrial_offenseFORGERY, FIRST DEGREE CF                  3.328926814643  0.211727931184  15.723 < 0.0000000000000002 ***
-pretrial_offenseFORGERY, SECOND DEGREE DF                 5.394078226407  0.209241253778  25.779 < 0.0000000000000002 ***
-pretrial_offenseFORGERY, THIRD DEGREE BM                  4.703662347251  0.216558389135  21.720 < 0.0000000000000002 ***
-pretrial_offenseFRAUDULENT USE OF ATM CM                 -0.903069571380  1.589785703140  -0.568              0.57000    
-pretrial_offenseHARASSMENT 1ST DEGREE DF                 -2.492280477982  1.453883403460  -1.714              0.08649 .  
-pretrial_offenseHARASSMENT, 2ND DEGREE CM                -2.360184438806  1.448011556626  -1.630              0.10311    
-pretrial_offenseHINDER PROSECUTION DEFINED F             -0.771549346450  1.642638638373  -0.470              0.63857    
-pretrial_offenseHINDER PROSECUTION, FIRST DEGREE DF       6.021402544768  0.210050248693  28.666 < 0.0000000000000002 ***
-pretrial_offenseHINDERING PROSECUTION 2ND DEG            -2.514897216742  1.455041860419  -1.728              0.08392 .  
-pretrial_offenseHOME INVASION AF                          5.260705875665  0.208961159750  25.176 < 0.0000000000000002 ***
-pretrial_offenseIDENTITY THEFT 1ST DEGREE BF              6.162192341681  0.209426765912  29.424 < 0.0000000000000002 ***
-pretrial_offenseIDENTITY THEFT 2ND DEGREE CF              6.089849794469  0.209678730018  29.044 < 0.0000000000000002 ***
-pretrial_offenseIDENTITY THEFT 3RD DEGREE DF              4.769659121986  0.209589257633  22.757 < 0.0000000000000002 ***
-pretrial_offenseIL POS LRG CAP MAG OBT AF 4/13 DF        -1.878810195944  1.442548026318  -1.302              0.19277    
-pretrial_offenseIL TRAFFIC IN PERSONAL ID INFO DF        -0.842805695244  1.612422934306  -0.523              0.60119    
-pretrial_offenseILL OP MV WO IGNITION DEVICE CM          -3.570868643276  1.540308054458  -2.318              0.02043 *  
-pretrial_offenseILL POSSESS CHILD PORN 2ND DEG F          5.474062895179  0.209490654232  26.130 < 0.0000000000000002 ***
-pretrial_offenseILL POSSESS CHILD PORN 3RD DEG DF        -1.863829579238  1.442882127964  -1.292              0.19645    
-pretrial_offenseILLEGAL MANUFACTUAL OR SALE OF DRUGS     -2.659562431042  1.463300048692  -1.818              0.06914 .  
-pretrial_offenseILLEGAL POSSES OF SHOP LIFTING DEVICE AM -1.215293253072  1.506000393931  -0.807              0.41969    
-pretrial_offenseILLEGAL REFUSAL OF DNA TESTING           -1.872989436028  1.442686008444  -1.298              0.19420    
-pretrial_offenseILLEGAL USE OF CREDIT CARD               -1.983644773736  1.441160321965  -1.376              0.16869    
-pretrial_offenseIMPERSONATION OF POLICE OFFICER DF       -1.363990659562  1.481125260052  -0.921              0.35709    
-pretrial_offenseIMPORTING CHILD PORNOGRAPHY F            -1.332638427543  1.485713793628  -0.897              0.36974    
-pretrial_offenseIMPROPER USE OF MARKER, LICENSE, REG M   -1.458208387670  1.469164779719  -0.993              0.32093    
-pretrial_offenseINCITING INJURY TO PERSONS OR PROPTY CF  -1.904840600901  1.442039091516  -1.321              0.18652    
-pretrial_offenseINJUNCTION AND RESTRAINING ORDER         -1.966201360624  1.441269122212  -1.364              0.17250    
-pretrial_offenseINJURY OR RISK OF INJURY TO MINOR F       4.186611066111  0.208978262702  20.034 < 0.0000000000000002 ***
-pretrial_offenseINJURY/RISK OF INJURY TO MINOR- SEXUAL C  3.279243102184  0.211450764279  15.508 < 0.0000000000000002 ***
-pretrial_offenseINTERFERENCE WITH SEARCH                 -2.214411958353  1.443432489573  -1.534              0.12500    
-pretrial_offenseINTERFERING WITH AN EMERGENCY CALL AM    -2.233564616310  1.443907028760  -1.547              0.12189    
-pretrial_offenseINTERFERING WITH AN OFFICER AM            3.298964629886  0.209470485822  15.749 < 0.0000000000000002 ***
-pretrial_offenseINTERSTATE PAROLE COMPACT                -1.407171642795  1.475306044333  -0.954              0.34018    
-pretrial_offenseINTIMIDATE DUE TO BIAS 3RD DEG AM        -1.361813871520  1.481434010459  -0.919              0.35796    
-pretrial_offenseINTIMIDATING A WITNESS CF                 6.320873299468  0.210164524322  30.076 < 0.0000000000000002 ***
-pretrial_offenseINTIMIDATION BSD BIGOTRY/BIAS DF         -1.427080208423  1.472815530945  -0.969              0.33257    
-pretrial_offenseISSUING A BAD CHECK                      -1.270890912064  1.495764401199  -0.850              0.39551    
-pretrial_offenseJUVENILE TRANSFER                        -4.684306549475  1.662015280421  -2.818              0.00483 ** 
-pretrial_offenseKIDNAPPING 1ST DEG W/ FIREARM AF         -2.882684577047  1.478642528217  -1.950              0.05123 .  
-pretrial_offenseKIDNAPPING 2ND DEG W/ FIREARM BF         -1.371918931272  1.480012719943  -0.927              0.35395    
-pretrial_offenseKIDNAPPING, 2ND DEGREE BF                -3.669504987234  1.550118496706  -2.367              0.01792 *  
-pretrial_offenseKIDNAPPING, FIRST DEGREE AF               4.959018848032  0.209163828541  23.709 < 0.0000000000000002 ***
-pretrial_offenseLARCENY, FIFTH DEGREE BM                  5.472885839981  0.209709209685  26.097 < 0.0000000000000002 ***
-pretrial_offenseLARCENY, FIRST DEGREE BF                  5.597052654681  0.208934175451  26.789 < 0.0000000000000002 ***
-pretrial_offenseLARCENY, FOURTH DEGREE AM                 5.244565348130  0.209551968361  25.028 < 0.0000000000000002 ***
-pretrial_offenseLARCENY, SECOND DEGREE CF                 5.462550768055  0.208961039708  26.141 < 0.0000000000000002 ***
-pretrial_offenseLARCENY, SIXTH DEGREE CM                  4.681910025711  0.209279681717  22.372 < 0.0000000000000002 ***
-pretrial_offenseLARCENY, THIRD DEGREE DF                  5.747600855393  0.208922482570  27.511 < 0.0000000000000002 ***
-pretrial_offenseLEAV CHILD UNSUPERV IN PUBL/MOT VEH C    -3.384223485597  1.521909598596  -2.224              0.02617 *  
-pretrial_offenseLIQUOR SALES TO MINORS                   -0.804176040650  1.628311153380  -0.494              0.62140    
-pretrial_offenseMANSLAUGHTER 2ND WITH MV (INTOX) CF       6.537953537750  0.209122604735  31.264 < 0.0000000000000002 ***
-pretrial_offenseMANSLAUGHTER, FIRST DEGREE BF             6.684659220108  0.208933045260  31.994 < 0.0000000000000002 ***
-pretrial_offenseMANSLAUGHTER, FIRST DEGREE, FIREARM BF    6.645768493969  0.208954896229  31.805 < 0.0000000000000002 ***
-pretrial_offenseMANSLAUGHTER, SECOND DEGREE CF            5.179208676945  0.210161286728  24.644 < 0.0000000000000002 ***
-pretrial_offenseMANUF OR POSSESSION OF BURGLAR TOOLS AM  -1.902747675460  1.442084800386  -1.319              0.18702    
-pretrial_offenseMANUFACTURE OF BOMBS BF                  -2.477450741405  1.453098171398  -1.705              0.08820 .  
-pretrial_offenseMISCONDUCT WITH A MOTOR VEHICLE DF       -1.339246445281  1.484728027814  -0.902              0.36705    
-pretrial_offenseMISREP AGE TO ENTICE A MINOR CF          -1.421710554121  1.473465126234  -0.965              0.33461    
-pretrial_offenseMISREP OF SUB AS CONTROLLED SUB DF       -1.973986568065  1.441211392939  -1.370              0.17079    
-pretrial_offenseMONEY LAUNDERING 2ND DEGREE CF           -1.683202494935  1.450191021085  -1.161              0.24577    
-pretrial_offenseMURDER AF                                 5.988170491088  0.208886981443  28.667 < 0.0000000000000002 ***
-pretrial_offenseNEGLG STORAGE OF A FIREARM DF            -0.828120475535  1.618330339334  -0.512              0.60885    
-pretrial_offenseNEGLIGENT HOMICIDE W/ MOTOR VEHICLE BM   -1.557762771371  1.459232361070  -1.068              0.28574    
-pretrial_offenseOBSCENITY AS TO MINORS F                 -0.841709858733  1.612858618502  -0.522              0.60176    
-pretrial_offenseOBSCENITY BM                             -0.828466649433  1.618189186748  -0.512              0.60867    
-pretrial_offenseOPERATE UNDER INFLU OF LIQ OR DRUGS       5.181381240971  0.209037612692  24.787 < 0.0000000000000002 ***
-pretrial_offenseOPERATE UNDER INFLU OF LIQ OR DRUGS M     3.520049435912  0.233285277899  15.089 < 0.0000000000000002 ***
-pretrial_offenseOPERATING MV W/O A LICENSE               -0.846858073037  1.610820642287  -0.526              0.59908    
-pretrial_offenseOPERATING UNDER SUSPENDED LIC OR REG. M  -4.473533945233  1.638189569993  -2.731              0.00632 ** 
-pretrial_offenseORGANIZED RETAIL THEFT F                 -1.195272774339  1.509982844925  -0.792              0.42861    
-pretrial_offenseOUI MV W/CHILD PSNGR AM                  -0.841096057556  1.613102442041  -0.521              0.60208    
-pretrial_offenseP19-187                                  -4.709245871384  1.664858968710  -2.829              0.00467 ** 
-pretrial_offensePERMIT TO SELL OR CARRY PISTOL           -1.404268666735  1.475679320500  -0.952              0.34130    
-pretrial_offensePOSS OF ASSAULT WEAPON PROHIBITED        -1.424113102392  1.473179355219  -0.967              0.33370    
-pretrial_offensePOSS OF WEAPON IN A CCI BF               -2.469056905172  1.452691803223  -1.700              0.08920 .  
-pretrial_offensePOSS WEAPON ON SCHOOL GROUNDS DF         -2.014035805708  1.441023583479  -1.398              0.16222    
-pretrial_offensePOSSESS OF HALLUC OR 4+ OZ MARIJUANA F   -1.959215806261  1.441328984373  -1.359              0.17405    
-pretrial_offensePOSSESSING CHILD PORNOGRAPH F             5.270630609269  0.209584435324  25.148 < 0.0000000000000002 ***
-pretrial_offensePOSSESSION OF NARCOTICS                   3.748387195479  0.209503336826  17.892 < 0.0000000000000002 ***
-pretrial_offensePOSSESSION OF SHOTGUN OR SILENCER DF     -1.812953116301  1.444342687385  -1.255              0.20940    
-pretrial_offensePRACTICE OF LAW BY NON-ATTORNEYS M       -0.915817727281  1.585311241143  -0.578              0.56347    
-pretrial_offensePRIMARY OFFENSE NOT DETERMINED           -3.279081167919  1.512144851537  -2.168              0.03012 *  
-pretrial_offensePROBATION AND CONDITIONAL DISCHARGE      -0.909314344280  1.587580586379  -0.573              0.56680    
-pretrial_offensePRODUCING CONTROLLED SUBS W/O LICENSE    -0.844623529736  1.611702693101  -0.524              0.60024    
-pretrial_offensePROHIB ACTS RE: CONTROLLED SUBSTANCES    -1.672508549550  1.450834313419  -1.153              0.24900    
-pretrial_offensePROHIB ACTS RE: DRUG PARAPHERNALIA       -2.452384377402  1.451963895059  -1.689              0.09122 .  
-pretrial_offensePROMOTING MINOR IN OBSCENE PERFORMNCE BF -3.547694193069  1.537722060340  -2.307              0.02105 *  
-pretrial_offensePROMOTING PROSTITUTION, FIRST DEGREE BF  -0.784548107610  1.636826941503  -0.479              0.63172    
-pretrial_offensePROMOTING PROSTITUTION, SECOND DEGREE CF -1.349288461130  1.483241798360  -0.910              0.36299    
-pretrial_offensePROSTITUTION AM                          -3.025780127862  1.490036766556  -2.031              0.04229 *  
-pretrial_offensePUBLIC INDECENCY BM                       4.301197314124  0.215260942561  19.981 < 0.0000000000000002 ***
-pretrial_offensePURGE CIVIL COMMITMENT                   -3.668701301576  1.550223853860  -2.367              0.01795 *  
-pretrial_offenseRAPE, SECOND DEGREE CF                   -1.246248492275  1.500155350588  -0.831              0.40612    
-pretrial_offenseRECKLESS BURNING DF                      -2.478449208603  1.453208864653  -1.706              0.08810 .  
-pretrial_offenseRECKLESS DRIVING M                       -2.362216705885  1.448089807114  -1.631              0.10283    
-pretrial_offenseRECKLESS ENDANGERMENT, FIRST DEGREE AM    2.957928241779  0.221429295722  13.358 < 0.0000000000000002 ***
-pretrial_offenseRECKLESS ENDANGERMENT, SECOND DEGREE BM  -2.620497273695  1.460923492254  -1.794              0.07286 .  
-pretrial_offenseREG PERSON WHO COMM OFF AGAINST MINOR DF  4.602864794792  0.215266876343  21.382 < 0.0000000000000002 ***
-pretrial_offenseREG PERSON WHO COMM SEX VIOL OFF DF       4.798574764823  0.211217091780  22.719 < 0.0000000000000002 ***
-pretrial_offenseRESISTING ARREST                         -0.881782545165  1.597496294144  -0.552              0.58096    
-pretrial_offenseROBBERY, FIRST DEGREE BF                  6.072051242504  0.208881011407  29.069 < 0.0000000000000002 ***
-pretrial_offenseROBBERY, SECOND DEGREE CF                 5.934974337646  0.208976595341  28.400 < 0.0000000000000002 ***
-pretrial_offenseROBBERY, THIRD DEGREE DF                  5.652298298453  0.209056640810  27.037 < 0.0000000000000002 ***
-pretrial_offenseSALE OF CONTROLLED SUBSTANCE F            3.322119578781  0.212078803506  15.665 < 0.0000000000000002 ***
-pretrial_offenseSALE OF HALLUCIGEN/NARCOTIC SUBSTANCE F   5.897977499617  0.208928951823  28.230 < 0.0000000000000002 ***
+pretrial_detention_length                                 0.002367044727  0.000002783392 850.417 < 0.0000000000000002 ***
+raceAsian                                                 0.265087388585  0.008382154881  31.625 < 0.0000000000000002 ***
+raceBlack                                                -0.001884273177  0.001893936001  -0.995              0.31979    
+raceHispanic                                             -0.083477675007  0.002099516698 -39.760 < 0.0000000000000002 ***
+raceNative American                                      -1.281709947560  0.028377497919 -45.166 < 0.0000000000000002 ***
+pretrial_age                                              0.008465869414  0.000064283911 131.695 < 0.0000000000000002 ***
+genderF                                                  -0.137108327176  0.002623061495 -52.270 < 0.0000000000000002 ***
+pretrial_offense(REPEALED) 53-173                        -1.580583515953  1.457334760488  -1.085              0.27811    
+pretrial_offense53A021                                   -4.587744473464  1.651155567485  -2.779              0.00546 ** 
+pretrial_offenseACT OF TERRORISM-ENHANCE SENT            -1.012522091439  1.554609444267  -0.651              0.51485    
+pretrial_offenseAGGAVTD SEX ASSLT-VCTM < 13YR AF         -3.140860345116  1.499633208663  -2.094              0.03622 *  
+pretrial_offenseALTERING OR REMOVING IDENT NUMBER F       5.835535182772  0.209297299052  27.882 < 0.0000000000000002 ***
+pretrial_offenseARREST WARRANT                           -3.710813786411  1.554521922779  -2.387              0.01698 *  
+pretrial_offenseARREST WITHOUT WARRANT                   -5.969201341059  1.814819003074  -3.289              0.00100 ** 
+pretrial_offenseARSON, FIRST DEGREE AF                    4.347532810082  0.209728854276  20.729 < 0.0000000000000002 ***
+pretrial_offenseARSON, SECOND DEGREE BF                  -3.172342417538  1.502385014050  -2.112              0.03473 *  
+pretrial_offenseARSON, THIRD DEGREE CF                    6.214845703994  0.209729023443  29.633 < 0.0000000000000002 ***
+pretrial_offenseASSAULT 2ND DEGREE WITH A FIREARM DF      3.586341490150  0.216528374020  16.563 < 0.0000000000000002 ***
+pretrial_offenseASSAULT 2ND WITH MV WHILE INTOXICATED DF  4.924174842471  0.209783220414  23.473 < 0.0000000000000002 ***
+pretrial_offenseASSAULT 2ND, VICTIM 60 OR OVER DF        -3.921429770349  1.576619552691  -2.487              0.01287 *  
+pretrial_offenseASSAULT 2ND, VICTIM 60+, WITH FIREARM DF -1.305539780065  1.489965721443  -0.876              0.38091    
+pretrial_offenseASSAULT 3RD DEGREE, VICTIM OVER 59 AM     2.866554268176  0.215245985766  13.318 < 0.0000000000000002 ***
+pretrial_offenseASSAULT ON POLICE OR FIRE OFFICER CF      4.801401699724  0.208981484191  22.975 < 0.0000000000000002 ***
+pretrial_offenseASSAULT, 1ST VICTIM 60 OR OVER BF         5.071352768173  0.209293724237  24.231 < 0.0000000000000002 ***
+pretrial_offenseASSAULT, FIRST DEGREE BF                  6.113028174816  0.208878304471  29.266 < 0.0000000000000002 ***
+pretrial_offenseASSAULT, ON DOC EMPLOYEE BF              -1.315933412623  1.488309118352  -0.884              0.37660    
+pretrial_offenseASSAULT, SECOND DEGREE DF                 5.267620160002  0.208951121285  25.210 < 0.0000000000000002 ***
+pretrial_offenseASSAULT, THIRD DEGREE AM                  4.239043740142  0.209033715765  20.279 < 0.0000000000000002 ***
+pretrial_offenseBREACH OF PEACE 1ST DEG DF               -0.909865694843  1.587387050633  -0.573              0.56652    
+pretrial_offenseBREACH OF PEACE BM                        2.502786406071  0.215268474576  11.626 < 0.0000000000000002 ***
+pretrial_offenseBURGLARY, FIRST DEGREE BF                 5.917855757938  0.208941475516  28.323 < 0.0000000000000002 ***
+pretrial_offenseBURGLARY, FIRST DEGREE: 53A101A(2) BF    -3.448556555751  1.528049324460  -2.257              0.02402 *  
+pretrial_offenseBURGLARY, SECOND DEGREE CF                5.691324282257  0.208975588765  27.234 < 0.0000000000000002 ***
+pretrial_offenseBURGLARY, SECOND DEGREE WITH FIREARM CF   5.405251717456  0.215293350390  25.106 < 0.0000000000000002 ***
+pretrial_offenseBURGLARY, THIRD DEGREE DF                 5.860440257859  0.208894348569  28.055 < 0.0000000000000002 ***
+pretrial_offenseCAPITAL FELONY F                         -3.170454587985  1.502204591729  -2.111              0.03481 *  
+pretrial_offenseCARRY PIST/RVOLV W/O PERMIT               4.754953134788  0.210041704113  22.638 < 0.0000000000000002 ***
+pretrial_offenseCARRYING OR SALE OF DANGEROUS WEAPON      4.510367533571  0.209926826145  21.485 < 0.0000000000000002 ***
+pretrial_offenseCARRYING WEAPON IN A MOTOR VEHICLE F      4.681651976149  0.209509987341  22.346 < 0.0000000000000002 ***
+pretrial_offenseCARRYING WEAPONS WITHOUT A PERMIT F       5.133050944135  0.209584046898  24.492 < 0.0000000000000002 ***
+pretrial_offenseCHEATING AT GAMBLING                     -0.944105075508  1.575758168248  -0.599              0.54908    
+pretrial_offenseCOMMIT SEXUAL OFF IN ANOTHER JURIS DF     5.552035769412  0.214385177177  25.897 < 0.0000000000000002 ***
+pretrial_offenseCONSPIRACY                                4.905230437683  0.209119161774  23.457 < 0.0000000000000002 ***
+pretrial_offenseCONVEY UNAUTHZD ITEMS INTO INST DF        5.710998228910  0.212739603319  26.845 < 0.0000000000000002 ***
+pretrial_offenseCREATING A PUBLIC DISTURBANCE            -0.875859839712  1.599695979793  -0.548              0.58402    
+pretrial_offenseCREDIT CARD THEFT                         3.595736091301  0.219028426162  16.417 < 0.0000000000000002 ***
+pretrial_offenseCRIM VIOL CIVIL PROTECTION ORDER DF       5.504844594434  0.209322010385  26.298 < 0.0000000000000002 ***
+pretrial_offenseCRIM VIOL OF PROTECTIVE ORDER AM          5.183209153853  0.209049740247  24.794 < 0.0000000000000002 ***
+pretrial_offenseCRIM VIOL OF PROTECTIVE ORDER DF          5.125354797034  0.208891627417  24.536 < 0.0000000000000002 ***
+pretrial_offenseCRIM VIOL RES ORDER AM                    4.888762725456  0.209335412141  23.354 < 0.0000000000000002 ***
+pretrial_offenseCRIM VIOL ST CRIM RESTR ORDER DF          4.652469170094  0.209386820675  22.219 < 0.0000000000000002 ***
+pretrial_offenseCRIMINAL ATTEMPT                          5.271846452093  0.208932121505  25.232 < 0.0000000000000002 ***
+pretrial_offenseCRIMINAL IMPERSONATION BM                 3.318123210043  0.215258548330  15.415 < 0.0000000000000002 ***
+pretrial_offenseCRIMINAL LIABILITY FOR ANOTHER PERSON     3.725026492673  0.212092881083  17.563 < 0.0000000000000002 ***
+pretrial_offenseCRIMINAL MISCHIEF, FIRST DEGREE DF        4.453795147212  0.210095975740  21.199 < 0.0000000000000002 ***
+pretrial_offenseCRIMINAL MISCHIEF, SECOND DEGREE AM       2.726505230582  0.227445623442  11.988 < 0.0000000000000002 ***
+pretrial_offenseCRIMINAL MISCHIEF, THIRD DEGREE BM        1.113916571954  0.276082144054   4.035   0.0000546654046625 ***
+pretrial_offenseCRIMINAL POSS OF PISTOL/REVOLVER DF       5.724509405264  0.208916192074  27.401 < 0.0000000000000002 ***
+pretrial_offenseCRIMINAL POSSESSION OF A PISTOL DF        5.771893571910  0.208907528869  27.629 < 0.0000000000000002 ***
+pretrial_offenseCRIMINAL TRESPASS, FIRST DEGREE AM        2.537124849410  0.211969301610  11.969 < 0.0000000000000002 ***
+pretrial_offenseCRIMINAL TRESPASS, SECOND DEGREE BM      -1.808207999303  1.444510117339  -1.252              0.21065    
+pretrial_offenseCRIMINAL TRESPASS, THIRD DEGREE CM        2.067829808751  0.276821415931   7.470   0.0000000000000803 ***
+pretrial_offenseCRIMINAL TROVER, 1ST DEGREE F            -1.492573630511  1.465441326664  -1.019              0.30843    
+pretrial_offenseCRIMINAL TROVER, 2ND DEGREE AM           -0.731783816755  1.661304835266  -0.440              0.65958    
+pretrial_offenseCRIMINAL USE OF A FIREARM DF             -1.395876921180  1.476761652638  -0.945              0.34454    
+pretrial_offenseCRIMINALLY NEGLIGENT HOMICIDE AM         -0.943241104109  1.576036118825  -0.598              0.54951    
+pretrial_offenseCRUELTY TO ANIMALS                        5.788241406658  0.210043478886  27.557 < 0.0000000000000002 ***
+pretrial_offenseCRUELTY TO PERSONS                       -1.578800253489  1.457470460027  -1.083              0.27870    
+pretrial_offenseCUSTODIAL INTERFERENCE, FIRST DEGREE DF  -1.177633617448  1.513627926963  -0.778              0.43656    
+pretrial_offenseDISORDERLY CONDUCT CM                     0.965614174890  0.233375898073   4.138   0.0000350970224936 ***
+pretrial_offenseDISSEMINATING VOYEURISTIC MATERIAL DF     5.257787938488  0.215289844507  24.422 < 0.0000000000000002 ***
+pretrial_offenseDRINKING WHILE OPERATING MOTOR VEHICL CM -0.843723133677  1.612059057541  -0.523              0.60071    
+pretrial_offenseDRIVING IMPROPERLY ON MULTI-LANE HWY     -0.923664500347  1.582608981832  -0.584              0.55947    
+pretrial_offenseDRIVING WHILE LICENSE SUSP FOR DWI        4.413683194640  0.211967010234  20.823 < 0.0000000000000002 ***
+pretrial_offenseDRUG PARAPHERNALIA IN DRUG FACTORY F      3.546771082214  0.211441958903  16.774 < 0.0000000000000002 ***
+pretrial_offenseEMPLOYING MINOR IN OBSCENE PERFORMNCE AF -3.062349106998  1.492920683530  -2.051              0.04024 *  
+pretrial_offenseENTICING A MINOR                         -1.421710036558  1.473465161679  -0.965              0.33461    
+pretrial_offenseESCAPE FROM CUSTODY                      -1.380496869858  1.478843865242  -0.933              0.35056    
+pretrial_offenseESCAPE, FIRST DEGREE CF                   6.151284264445  0.209889451931  29.307 < 0.0000000000000002 ***
+pretrial_offenseEVADING RESPONSIBILITY M                  3.218814573113  0.214363946879  15.016 < 0.0000000000000002 ***
+pretrial_offenseEXTRADITION                              -0.902938484859  1.589832227135  -0.568              0.57007    
+pretrial_offenseFAILURE TO APPEAR, FIRST DEGREE DF        4.032845406781  0.209130237898  19.284 < 0.0000000000000002 ***
+pretrial_offenseFAILURE TO APPEAR, SECOND DEGREE AM       3.498977629038  0.209087807862  16.734 < 0.0000000000000002 ***
+pretrial_offenseFAILURE TO COMPLY W/ SEAT BELTS/SYSTEM   -0.764354177558  1.645915154239  -0.464              0.64237    
+pretrial_offenseFAILURE TO OBEY AN OFFICER                2.841998725104  0.233730304051  12.159 < 0.0000000000000002 ***
+pretrial_offenseFAILURE TO PAY OR PLEAD M                 3.771716584289  0.210024598668  17.958 < 0.0000000000000002 ***
+pretrial_offenseFALSE ENTRY BY OFFICER OR PUB AGENT AM   -1.095698523539  1.532326127349  -0.715              0.47457    
+pretrial_offenseFALSE STATEMENT, 2ND DEGREE AM           -1.319274235445  1.487784595079  -0.887              0.37522    
+pretrial_offenseFALSELY REPORTING AN INCIDENT 2ND AM     -0.816633002560  1.623064229244  -0.503              0.61486    
+pretrial_offenseFALSELY REPORTING INCIDENT               -1.778729937340  1.445577306950  -1.230              0.21852    
+pretrial_offenseFEDERAL OFFENSE                          -1.714782079650  1.448448122164  -1.184              0.23646    
+pretrial_offenseFELONY MURDER AF                          6.677590029199  0.208906706218  31.964 < 0.0000000000000002 ***
+pretrial_offenseFLR KEEP NARC IN ORG CONTAINER F         -2.681414372125  1.464691070920  -1.831              0.06714 .  
+pretrial_offenseFORGERY, FIRST DEGREE CF                  3.328927280293  0.211727919381  15.723 < 0.0000000000000002 ***
+pretrial_offenseFORGERY, SECOND DEGREE DF                 5.394078829064  0.209241241830  25.779 < 0.0000000000000002 ***
+pretrial_offenseFORGERY, THIRD DEGREE BM                  4.703654619051  0.216558378056  21.720 < 0.0000000000000002 ***
+pretrial_offenseFRAUDULENT USE OF ATM CM                 -0.903069126354  1.589785820475  -0.568              0.57000    
+pretrial_offenseHARASSMENT 1ST DEGREE DF                 -2.492283620857  1.453883341200  -1.714              0.08649 .  
+pretrial_offenseHARASSMENT, 2ND DEGREE CM                -2.360182954406  1.448011305563  -1.630              0.10311    
+pretrial_offenseHINDER PROSECUTION DEFINED F             -0.771548998873  1.642638749196  -0.470              0.63857    
+pretrial_offenseHINDER PROSECUTION, FIRST DEGREE DF       6.021402974162  0.210050236793  28.666 < 0.0000000000000002 ***
+pretrial_offenseHINDERING PROSECUTION 2ND DEG            -2.514896074612  1.455041557206  -1.728              0.08392 .  
+pretrial_offenseHOME INVASION AF                          5.260706387185  0.208961147787  25.176 < 0.0000000000000002 ***
+pretrial_offenseIDENTITY THEFT 1ST DEGREE BF              6.162190536972  0.209426754007  29.424 < 0.0000000000000002 ***
+pretrial_offenseIDENTITY THEFT 2ND DEGREE CF              6.089850492217  0.209678718095  29.044 < 0.0000000000000002 ***
+pretrial_offenseIDENTITY THEFT 3RD DEGREE DF              4.769658183253  0.209589245706  22.757 < 0.0000000000000002 ***
+pretrial_offenseIL POS LRG CAP MAG OBT AF 4/13 DF        -1.878809589420  1.442547940301  -1.302              0.19277    
+pretrial_offenseIL TRAFFIC IN PERSONAL ID INFO DF        -0.842805467825  1.612422981432  -0.523              0.60119    
+pretrial_offenseILL OP MV WO IGNITION DEVICE CM          -3.570867684002  1.540307060193  -2.318              0.02043 *  
+pretrial_offenseILL POSSESS CHILD PORN 2ND DEG F          5.474046875077  0.209490644453  26.130 < 0.0000000000000002 ***
+pretrial_offenseILL POSSESS CHILD PORN 3RD DEG DF        -1.863828814886  1.442882072058  -1.292              0.19645    
+pretrial_offenseILLEGAL MANUFACTUAL OR SALE OF DRUGS     -2.659561603622  1.463299750812  -1.818              0.06914 .  
+pretrial_offenseILLEGAL POSSES OF SHOP LIFTING DEVICE AM -1.215292891765  1.506000401719  -0.807              0.41969    
+pretrial_offenseILLEGAL REFUSAL OF DNA TESTING           -1.872988789414  1.442685898838  -1.298              0.19420    
+pretrial_offenseILLEGAL USE OF CREDIT CARD               -1.983643856615  1.441160179796  -1.376              0.16869    
+pretrial_offenseIMPERSONATION OF POLICE OFFICER DF       -1.363990086415  1.481125283280  -0.921              0.35709    
+pretrial_offenseIMPORTING CHILD PORNOGRAPHY F            -1.332637884113  1.485713846240  -0.897              0.36974    
+pretrial_offenseIMPROPER USE OF MARKER, LICENSE, REG M   -1.458207937893  1.469164747555  -0.993              0.32093    
+pretrial_offenseINCITING INJURY TO PERSONS OR PROPTY CF  -1.904840144227  1.442039000708  -1.321              0.18652    
+pretrial_offenseINJUNCTION AND RESTRAINING ORDER         -1.966200708367  1.441269004724  -1.364              0.17250    
+pretrial_offenseINJURY OR RISK OF INJURY TO MINOR F       4.186611007255  0.208978250736  20.034 < 0.0000000000000002 ***
+pretrial_offenseINJURY/RISK OF INJURY TO MINOR- SEXUAL C  3.279239396048  0.211450752564  15.508 < 0.0000000000000002 ***
+pretrial_offenseINTERFERENCE WITH SEARCH                 -2.214410936170  1.443432295791  -1.534              0.12500    
+pretrial_offenseINTERFERING WITH AN EMERGENCY CALL AM    -2.233563789904  1.443906837976  -1.547              0.12189    
+pretrial_offenseINTERFERING WITH AN OFFICER AM            3.298964916865  0.209470473885  15.749 < 0.0000000000000002 ***
+pretrial_offenseINTERSTATE PAROLE COMPACT                -1.407171186300  1.475306046015  -0.954              0.34018    
+pretrial_offenseINTIMIDATE DUE TO BIAS 3RD DEG AM        -1.361813421660  1.481434016489  -0.919              0.35796    
+pretrial_offenseINTIMIDATING A WITNESS CF                 6.320868674865  0.210164512666  30.076 < 0.0000000000000002 ***
+pretrial_offenseINTIMIDATION BSD BIGOTRY/BIAS DF         -1.427079749700  1.472815530669  -0.969              0.33257    
+pretrial_offenseISSUING A BAD CHECK                      -1.270890321482  1.495764443028  -0.850              0.39551    
+pretrial_offenseJUVENILE TRANSFER                        -4.684303406345  1.662013327920  -2.818              0.00483 ** 
+pretrial_offenseKIDNAPPING 1ST DEG W/ FIREARM AF         -2.882683957901  1.478642357108  -1.950              0.05123 .  
+pretrial_offenseKIDNAPPING 2ND DEG W/ FIREARM BF         -1.371918620739  1.480012705418  -0.927              0.35395    
+pretrial_offenseKIDNAPPING, 2ND DEGREE BF                -3.669503728855  1.550117970112  -2.367              0.01792 *  
+pretrial_offenseKIDNAPPING, FIRST DEGREE AF               4.959019325594  0.209163816586  23.709 < 0.0000000000000002 ***
+pretrial_offenseLARCENY, FIFTH DEGREE BM                  5.472886327349  0.209709197764  26.098 < 0.0000000000000002 ***
+pretrial_offenseLARCENY, FIRST DEGREE BF                  5.597052143127  0.208934163487  26.789 < 0.0000000000000002 ***
+pretrial_offenseLARCENY, FOURTH DEGREE AM                 5.244565956338  0.209551956430  25.028 < 0.0000000000000002 ***
+pretrial_offenseLARCENY, SECOND DEGREE CF                 5.462550278827  0.208961027746  26.141 < 0.0000000000000002 ***
+pretrial_offenseLARCENY, SIXTH DEGREE CM                  4.681910263154  0.209279669770  22.372 < 0.0000000000000002 ***
+pretrial_offenseLARCENY, THIRD DEGREE DF                  5.747601259531  0.208922470603  27.511 < 0.0000000000000002 ***
+pretrial_offenseLEAV CHILD UNSUPERV IN PUBL/MOT VEH C    -3.384222305671  1.521909079889  -2.224              0.02617 *  
+pretrial_offenseLIQUOR SALES TO MINORS                   -0.804175620323  1.628311287620  -0.494              0.62140    
+pretrial_offenseMANSLAUGHTER 2ND WITH MV (INTOX) CF       6.537954066914  0.209122592780  31.264 < 0.0000000000000002 ***
+pretrial_offenseMANSLAUGHTER, FIRST DEGREE BF             6.684659649116  0.208933033294  31.994 < 0.0000000000000002 ***
+pretrial_offenseMANSLAUGHTER, FIRST DEGREE, FIREARM BF    6.645768935351  0.208954884266  31.805 < 0.0000000000000002 ***
+pretrial_offenseMANSLAUGHTER, SECOND DEGREE CF            5.179209247314  0.210161274830  24.644 < 0.0000000000000002 ***
+pretrial_offenseMANUF OR POSSESSION OF BURGLAR TOOLS AM  -1.902746976412  1.442084689114  -1.319              0.18702    
+pretrial_offenseMANUFACTURE OF BOMBS BF                  -2.477449849775  1.453098056309  -1.705              0.08820 .  
+pretrial_offenseMISCONDUCT WITH A MOTOR VEHICLE DF       -1.339246122184  1.484728017569  -0.902              0.36705    
+pretrial_offenseMISREP AGE TO ENTICE A MINOR CF          -1.421710036557  1.473465161679  -0.965              0.33461    
+pretrial_offenseMISREP OF SUB AS CONTROLLED SUB DF       -1.973985753677  1.441211275926  -1.370              0.17079    
+pretrial_offenseMONEY LAUNDERING 2ND DEGREE CF           -1.683202137605  1.450190990379  -1.161              0.24577    
+pretrial_offenseMURDER AF                                 5.988170923660  0.208886969474  28.667 < 0.0000000000000002 ***
+pretrial_offenseNEGLG STORAGE OF A FIREARM DF            -0.828120250410  1.618330387359  -0.512              0.60885    
+pretrial_offenseNEGLIGENT HOMICIDE W/ MOTOR VEHICLE BM   -1.557762466529  1.459232333996  -1.068              0.28574    
+pretrial_offenseOBSCENITY AS TO MINORS F                 -0.841709326045  1.612858787158  -0.522              0.60176    
+pretrial_offenseOBSCENITY BM                             -0.828466440389  1.618189228176  -0.512              0.60867    
+pretrial_offenseOPERATE UNDER INFLU OF LIQ OR DRUGS       5.181381296479  0.209037600730  24.787 < 0.0000000000000002 ***
+pretrial_offenseOPERATE UNDER INFLU OF LIQ OR DRUGS M     3.520050029295  0.233285267233  15.089 < 0.0000000000000002 ***
+pretrial_offenseOPERATING MV W/O A LICENSE               -0.846857888524  1.610820672016  -0.526              0.59908    
+pretrial_offenseOPERATING UNDER SUSPENDED LIC OR REG. M  -4.473530998700  1.638186975301  -2.731              0.00632 ** 
+pretrial_offenseORGANIZED RETAIL THEFT F                 -1.195272249881  1.509982888010  -0.792              0.42861    
+pretrial_offenseOUI MV W/CHILD PSNGR AM                  -0.841095868970  1.613102473919  -0.521              0.60208    
+pretrial_offenseP19-187                                  -4.709242854801  1.664857092311  -2.829              0.00467 ** 
+pretrial_offensePERMIT TO SELL OR CARRY PISTOL           -1.404268284947  1.475679312877  -0.952              0.34130    
+pretrial_offensePOSS OF ASSAULT WEAPON PROHIBITED        -1.424112683319  1.473179350396  -0.967              0.33370    
+pretrial_offensePOSS OF WEAPON IN A CCI BF               -2.469056406898  1.452691707669  -1.700              0.08920 .  
+pretrial_offensePOSS WEAPON ON SCHOOL GROUNDS DF         -2.014035432609  1.441023535717  -1.398              0.16222    
+pretrial_offensePOSSESS OF HALLUC OR 4+ OZ MARIJUANA F   -1.959214992265  1.441328868927  -1.359              0.17405    
+pretrial_offensePOSSESSING CHILD PORNOGRAPH F             5.270631289272  0.209584423390  25.148 < 0.0000000000000002 ***
+pretrial_offensePOSSESSION OF NARCOTICS                   3.748387860388  0.209503324892  17.892 < 0.0000000000000002 ***
+pretrial_offensePOSSESSION OF SHOTGUN OR SILENCER DF     -1.812952499294  1.444342607457  -1.255              0.20940    
+pretrial_offensePRACTICE OF LAW BY NON-ATTORNEYS M       -0.915817573250  1.585311254328  -0.578              0.56347    
+pretrial_offensePRIMARY OFFENSE NOT DETERMINED           -3.279079513492  1.512144111711  -2.168              0.03012 *  
+pretrial_offensePROBATION AND CONDITIONAL DISCHARGE      -0.909314103794  1.587580630325  -0.573              0.56680    
+pretrial_offensePRODUCING CONTROLLED SUBS W/O LICENSE    -0.844623103565  1.611702818619  -0.524              0.60024    
+pretrial_offensePROHIB ACTS RE: CONTROLLED SUBSTANCES    -1.672508159338  1.450834259487  -1.153              0.24900    
+pretrial_offensePROHIB ACTS RE: DRUG PARAPHERNALIA       -2.452383220752  1.451963597634  -1.689              0.09122 .  
+pretrial_offensePROMOTING MINOR IN OBSCENE PERFORMNCE BF -3.547693339458  1.537721866470  -2.307              0.02105 *  
+pretrial_offensePROMOTING PROSTITUTION, FIRST DEGREE BF  -0.784547866900  1.636827002046  -0.479              0.63172    
+pretrial_offensePROMOTING PROSTITUTION, SECOND DEGREE CF -1.349287838720  1.483241831132  -0.910              0.36299    
+pretrial_offensePROSTITUTION AM                          -3.025778298945  1.490036127066  -2.031              0.04229 *  
+pretrial_offensePUBLIC INDECENCY BM                       4.301197754018  0.215260930955  19.981 < 0.0000000000000002 ***
+pretrial_offensePURGE CIVIL COMMITMENT                   -3.668699100554  1.550222686375  -2.367              0.01795 *  
+pretrial_offenseRAPE, SECOND DEGREE CF                   -1.246248045009  1.500155370833  -0.831              0.40612    
+pretrial_offenseRECKLESS BURNING DF                      -2.478448274500  1.453208575344  -1.706              0.08810 .  
+pretrial_offenseRECKLESS DRIVING M                       -2.362215744252  1.448089576015  -1.631              0.10283    
+pretrial_offenseRECKLESS ENDANGERMENT, FIRST DEGREE AM    2.957928774069  0.221429284456  13.358 < 0.0000000000000002 ***
+pretrial_offenseRECKLESS ENDANGERMENT, SECOND DEGREE BM  -2.620496443692  1.460923197135  -1.794              0.07286 .  
+pretrial_offenseREG PERSON WHO COMM OFF AGAINST MINOR DF  4.602865351509  0.215266864738  21.382 < 0.0000000000000002 ***
+pretrial_offenseREG PERSON WHO COMM SEX VIOL OFF DF       4.798575159687  0.211217079945  22.719 < 0.0000000000000002 ***
+pretrial_offenseRESISTING ARREST                         -0.881782143909  1.597496400829  -0.552              0.58096    
+pretrial_offenseROBBERY, FIRST DEGREE BF                  6.072051421761  0.208880999435  29.069 < 0.0000000000000002 ***
+pretrial_offenseROBBERY, SECOND DEGREE CF                 5.934974817857  0.208976583377  28.400 < 0.0000000000000002 ***
+pretrial_offenseROBBERY, THIRD DEGREE DF                  5.652298856644  0.209056628851  27.037 < 0.0000000000000002 ***
+pretrial_offenseSALE OF CONTROLLED SUBSTANCE F            3.322116850847  0.212078791759  15.665 < 0.0000000000000002 ***
+pretrial_offenseSALE OF HALLUCIGEN/NARCOTIC SUBSTANCE F   5.897976747525  0.208928939861  28.230 < 0.0000000000000002 ***
  [ reached getOption("max.print") -- omitted 51 rows ]
 ---
 Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1

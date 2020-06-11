@@ -167,7 +167,6 @@ pretrial_modeling_df <- pretrial_modeling_df %>%
   mutate(arrested_again_within_year = replace(arrested_again_within_year, is.na(arrested_again_within_year), 0)) %>% 
   dplyr::select(1:time_since_last_charge, arrested_again_within_year, everything())
 
-
 #ungroup
 pretrial_modeling_df <- pretrial_modeling_df %>% 
   ungroup()
@@ -194,6 +193,9 @@ fviz_cluster(k1, data = pretrial_modeling_df_cluster)
 pretrial_modeling_df_ml <- pretrial_modeling_df %>% 
   mutate(arrested_again_within_year = as.factor(arrested_again_within_year))
 
+#exclude people in last year of data, as this data is technically incomplete
+pretrial_modeling_df_ml <- pretrial_modeling_df_ml %>% 
+  filter(earliest_pretrial_download_date < most_recent_pretrial_download_date_in_dataset - 365)
 
 #summarize arrested_again_within_year to view
 pretrial_modeling_df_ml %>% 
@@ -210,7 +212,15 @@ test_data <- testing(data_split)
 
 #create recipe for model - Note: I dont use offense because it has so many levels it takes the model a long time to run
 number_charges_recipe <- 
-  recipe(arrested_again_within_year ~ race + gender + offense + pretrial_age + bond_amount + pretrial_detention_length + charge_count + identifier, data = train_data) %>% #set outcome & predicter variables
+  recipe(arrested_again_within_year ~ race +
+           gender +
+           offense +
+           pretrial_age +
+           bond_amount +
+           pretrial_detention_length +
+           charge_count +
+           identifier,
+         data = train_data) %>% #set outcome & predictor variables
   update_role(identifier, new_role = "ID") %>% #set identifier as id
   step_zv(all_predictors()) #remove columns from data when training data set have a single value (potentially the case for more rare offenses)
 summary(number_charges_recipe)
@@ -218,7 +228,8 @@ summary(number_charges_recipe)
 #logistic regression model
 logistic_mod <- 
   logistic_reg() %>% 
-  set_engine("glm")
+  set_engine("glm") %>% 
+  set_mode("classification")
 
 #create workflow
 number_charges_wflow <- 
@@ -242,7 +253,7 @@ number_charges_pred <-
   bind_cols(test_data)
 
 #set threshold for prediction
-threshold <- 0.214
+threshold <- 0.2373786
 number_charges_pred <- number_charges_pred %>% 
   mutate(prediction = as.factor(ifelse(.pred_1 > threshold, 1, 0))) %>% 
   dplyr::select(1:.pred_1, prediction, everything())
@@ -268,8 +279,32 @@ cmat <- number_charges_pred %>%
 cmat
 summary(cmat)
 
+#confusion matrix ggplot
+number_charges_pred %>%
+  conf_mat(truth = "arrested_again_within_year", estimate = "prediction") %>% 
+  pluck(1) %>%
+  as_tibble() %>% 
+  mutate(`Predicted Values` = as.factor(Prediction),
+         `Actual Values` = as.factor(Truth)) %>% 
+  mutate(`Predicted Values` = reorder(`Predicted Values`, desc(`Predicted Values`))) %>% 
+  ggplot(aes(`Actual Values`, `Predicted Values`, alpha = n, fill = n)) +
+    geom_tile(show.legend = FALSE) +
+    geom_text(aes(label = n), colour = "black", alpha = 1, size = 6) +
+    scale_fill_continuous(low = "#b60a1c", high = "#51b364") +
+    scale_x_discrete(labels = c("No re-arrest\nwithin a year", "Re-arrested\nwithin a year"), position = "top") +
+    scale_y_discrete(labels = c("No re-arrest\nwithin a year", "Re-arrested\nwithin a year"), position = "left") +
+    theme_minimal() +
+    theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+ggsave("Graphs/confusion_matrix.jpg", height = 5, width = 10)
 
+#get median ROC 
 median(number_charges_pred$.pred_1, na.rm = TRUE)
+
+#10-fold cross validation
+folds <- vfold_cv(train_data, v = 10)
+number_charges_fit_rs <- fit_resamples(number_charges_wflow, folds)
+collect_metrics(number_charges_fit_rs, summarize = TRUE)
+
 ```
 
 ```{r tables of summary stats for paper}

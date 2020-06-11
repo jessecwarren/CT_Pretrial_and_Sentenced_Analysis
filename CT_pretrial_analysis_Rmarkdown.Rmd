@@ -162,6 +162,9 @@ ggplot(data = CTp, aes(race, fill=gender)) +
        caption="The total number of unique pretrial inmates in this time period is INSERT; I present data for INSERT here.\n(I exclude 167 individuals who are coded inconsistently by race or gender over time).\nThe dataset codes Hispanic as a race (this is different than, say, the Census methodology).") +
   ggtitle("Gender and Race of Connecticut Pretrial Inmates (INSERT DATE)", subtitle = "Data Available via Connecticut Open Data")
 ggsave("Graphs/pretrial_gender_race.png", width=7, height=4.5, dpi=900)
+
+#summary stats
+tabyl(CTp, gender)
 ```
 
 ```{r Compare race to CT population }
@@ -200,6 +203,9 @@ ggplot(data = CTrace_c, aes(x=source, y=percent, fill=race)) +
   scale_x_discrete(labels=c("Overall Population", "Pretrial Inmate Population")) + 
   ggtitle("Overall Connecticut Population vs. Connecticut Pretrial Inmate Population", subtitle = "Data Available via Connecticut Open Data")
 ggsave("Graphs/pretrial_race_compare.png", width=7, height=5, dpi=900)
+
+#summary stats
+tabyl(CTrace_c, race)
 ```
 
 
@@ -284,7 +290,7 @@ CTbondr <- CTbond[,c("race", "bond_amount", "age")] %>%
     summarise_all(funs(mean, sd, se = sd(.)/sqrt(n())))
 
 #create boxplot of bond means
-ggplot(CTbondr, aes(x=race, y=bond_amount_mean, colour=race)) + 
+ggplot(CTbondr, aes(x=race, y=bond_amount_mean)) + 
   geom_errorbar(aes(ymin=bond_amount_mean-(1.96*bond_amount_se), 
                     ymax=bond_amount_mean+(1.96*bond_amount_se)), width=.1) +
   geom_point() +

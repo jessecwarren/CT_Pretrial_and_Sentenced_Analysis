@@ -424,9 +424,14 @@ merged_cleaned %>%
 merged_cleaned <- merged_cleaned %>%
   mutate(pretrial_offense = as.factor(pretrial_offense))
 
+#set white and male as reference categories
+merged_cleaned <- merged_cleaned %>%
+  mutate(race = relevel(race, ref = 5),
+         gender = relevel(gender, ref = 2))
+
 #run regressions with sentence days as dependent variable
 sink("Regression_results/sentence_days_regressions.txt")
-lm_sentence_days <- merged_cleaned %>%
+lm_sentence_days <- merged_cleaned %>% 
   lm(sentence_days ~ bond_amount +
                  pretrial_detention_length +
                  race +
@@ -434,19 +439,32 @@ lm_sentence_days <- merged_cleaned %>%
                  gender +
                  pretrial_offense,
      data = .)
-print("OLS")
+print("OLS sentence days")
 summary(lm_sentence_days)
 
-# negative_binomial_sentence_days <- merged_cleaned %>%
-#   glm.nb(sentence_days ~ bond_amount +
-#                  pretrial_detention_length +
-#                  race +
-#                  pretrial_age +
-#                  gender +
-#                  pretrial_offense,
-#      data = .)
-# print("Negative binomial")
-# summary(negative_binomial_sentence_days)
+logit_sentenced <- merged_cleaned %>%
+  lm(sentenced ~ bond_amount +
+                 pretrial_detention_length +
+                 race +
+                 pretrial_age +
+                 gender +
+                 pretrial_offense,
+     family = "binomial",
+     data = .)
+print("Logit sentenced")
+summary(logit_sentenced)
+
+probit_sentenced <- merged_cleaned %>%
+  lm(sentenced ~ bond_amount +
+                 pretrial_detention_length +
+                 race +
+                 pretrial_age +
+                 gender +
+                 pretrial_offense,
+     family = binomial(link = "probit"),
+     data = .)
+print("Probit sentenced")
+summary(probit_sentenced)
 
 
 bayes_glm_sentence_days <- merged_cleaned %>%
@@ -462,14 +480,74 @@ print("Bayes GLM")
 summary(bayes_glm_sentence_days)
 sink()
 
-#regression table outputs
+#OLS table
 stargazer(lm_sentence_days,
           type = "html",
-          title = "OLS Regression outputs",
+          title = "OLS regression results",
+          dep.var.labels = "Sentenced length (days)",
+          column.labels = "OLS",
+          covariate.labels = c("Bond amount",
+                               "Pretrial detention length (days)",
+                               "Race - Asian", 
+                               "Race - Black",
+                               "Race - Hispanic",
+                               "Race - Native American",
+                               "Pretrial age (years)",
+                               "Gender - Female"),
           digits = 2,
+          single.row = TRUE,
           omit = "pretrial_offense",
+          omit.stat = c("LL", "ser"),
+          notes = "Pretrial offense category not included here as there are a large number of offense rows.",
           out = "Regression_results/sentence_days_OLS_table.html")
 
+#logit and probit tables
+stargazer(logit_sentenced,
+          probit_sentenced,
+          type = "html",
+          align = TRUE,
+          title = "Logit and probit regression results",
+          dep.var.labels = "Sentenced (binary)",
+          column.labels = c("Logit", "Probit"),
+          covariate.labels = c("Bond amount",
+                               "Pretrial detention length (days)",
+                               "Race - Asian", 
+                               "Race - Black",
+                               "Race - Hispanic",
+                               "Race - Native American",
+                               "Pretrial age (years)",
+                               "Gender - Female"),
+          digits = 2,
+          single.row = TRUE,
+          omit = "pretrial_offense",
+          omit.stat = c("LL", "ser"),
+          notes = "Pretrial offense category not included here as there are a large number of offense rows.",
+          out = "Regression_results/sentenced_logit_probit_table.html")
+
+#all tables combined
+stargazer(lm_sentence_days,
+          logit_sentenced,
+          probit_sentenced,
+          type = "html",
+          align = TRUE,
+          title = "Regression results",
+          dep.var.labels = c("Sentence length (days)", "Sentenced (binary)"),
+          column.labels = c("OLS", "Logit", "Probit"),
+          covariate.labels = c("Bond amount",
+                               "Pretrial detention length (days)",
+                               "Race - Asian", 
+                               "Race - Black",
+                               "Race - Hispanic",
+                               "Race - Native American",
+                               "Pretrial age (years)",
+                               "Gender - Female"),
+          digits = 2,
+          single.row = TRUE,
+          model.numbers = FALSE,
+          omit = "pretrial_offense",
+          omit.stat = c("LL", "ser"),
+          notes = "Pretrial offense category not included here as there are a large number of offense rows.",
+          out = "Regression_results/all_regression_tables_combined.html")
 ```
 
 
