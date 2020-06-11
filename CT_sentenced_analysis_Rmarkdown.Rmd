@@ -91,6 +91,7 @@ nrow(unique(CT_sentenced_raw[,c("identifier","latest_admission_date", "offense")
 #how many unique charges?
 length(unique(CT_sentenced_raw[,"offense"]))
 ```
+
 ```{r Why are people in prison graph}
 #make a df of charges
 sentenced_charges <- unique(CT_sentenced_raw[,c("identifier","latest_admission_date", "offense")]) %>%
@@ -125,9 +126,10 @@ ggplot(data = sentenced_charges10, aes(x = offense, y = perc)) +
   theme_minimal() +
   scale_y_continuous(labels = percent) +
   theme(plot.title = element_text(hjust = 0)) +
-  labs(x="", y="", caption="These calculations consider all 34,764 unique person-admission-offense observations from 8-22-2017 to 5-7-2020.") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
-  ggtitle("Why Are People in Prison? (Top 10 Charges)", subtitle = "Data Available via Connecticut Open Data")
+  labs(x="", y="") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 1)) +
+  theme(text = element_text(family = "Georgia")) +
+  ggtitle("Top 10 charges")
 ggsave("Graphs/sentenced_reasons_for_arrest.png", width=7, height=4.5, dpi=900)
 
 #crosstabs
@@ -164,9 +166,9 @@ ggplot(data = CT_sentenced_people_deduped, aes(race, fill=gender)) +
   theme_minimal() +
   scale_fill_manual(name="Gender", values = c("gold", "dodgerblue"), labels=c("Female", "Male")) +
   theme(plot.title = element_text(hjust = 0)) +
-  labs(x="", y="Number of Prison Inmates",
-       caption="The total number of unique prison inmates in this time period is INSERT; I present data for INSERT here.\n(I exclude 57 individuals who are coded inconsistently by race or gender over time).\nThe dataset codes Hispanic as a race (this is different than, say, the Census methodology).") +
-  ggtitle("Gender and Race of Connecticut Sentenced Inmates (INSERT DATE)", subtitle = "Data Available via Connecticut Open Data")
+  labs(x="", y="Number of people sentenced") +
+  theme(text = element_text(family = "Georgia")) +
+  ggtitle("Gender and race of people sentenced and incarcerated on May 7, 2020")
 ggsave("Graphs/sentenced_gender_race.png", width=7, height=4.5, dpi=900)
 
 #summary stats - gender
@@ -207,11 +209,11 @@ ggplot(data = CT_sentenced_race_census, aes(x = source, y = percent, fill = race
   theme_minimal() +
   scale_fill_manual(name = "Race", values = cbPalette) +  
   theme(plot.title = element_text(hjust = 0)) +
-  labs(x="", y="",
-       caption="The sentenced inmate population covers 27,786 people who at some point were in DOC facilities 8/22/17-5/7/2020.\n(I exclude 57 individuals who are coded inconsistently by race or gender over time).\nOverall Population data is estimated from the US Census QuickFacts.")+
+  labs(x="", y="")+
   scale_y_continuous(labels = percent) +
-  scale_x_discrete(labels=c("Overall Population", "Sentenced Inmate Population")) + 
-  ggtitle("Overall Connecticut Population vs. Connecticut Sentenced Inmate Population", subtitle = "Data Available via Connecticut Open Data")
+  scale_x_discrete(labels=c("Overall population", "Sentenced population")) + 
+  theme(text = element_text(family = "Georgia")) +
+  ggtitle("Overall connecticut population vs. connecticut sentenced population")
 ggsave("Graphs/sentenced_race_compare.png", width=7, height=5, dpi=900)
 ```
 
@@ -228,11 +230,11 @@ ggplot(data = CT_5_7_2020, aes(age, fill=race)) +
   theme_minimal() +
   scale_fill_manual(name="Race", values = cbPalette) +  
   theme(plot.title = element_text(hjust = 0)) +
-  labs(x="Age", y="Number of Sentenced Inmates",
-       caption="This graphs covers only the inmates present in DOC facilities on 5/7/2020.") +
+  labs(x="Age", y="Number of people sentenced") +
   #scale_y_continuous(limits=c(0,126), breaks=seq(0,126,25))+
   #scale_x_continuous(limits=c(15,81), breaks=seq(15,80,5))+ 
-  ggtitle("Age and Race of Connecticut Sentenced Inmates (5/7/2020)", subtitle = "Data Available via Connecticut Open Data")
+  theme(text = element_text(family = "Georgia")) +
+  ggtitle("Age and Race of people sentenced and incarcerated on May 7, 2020")
 ggsave("Graphs/sentenced_age_race-05-07-20.png", width=8, height=5, dpi=900)
 ```
 
@@ -248,11 +250,11 @@ CT_5_7_2020 %>%
     theme_minimal() +
     scale_fill_manual(name="Race", values = cbPalette) +  
     theme(plot.title = element_text(hjust = 0)) +
-    labs(x="Sentence (Years)", y="Number of Sentenced Inmates",
-         caption="This graphs covers only the inmates present in DOC facilities on 5/7/2020.") +
+    labs(x="Sentence (Years)", y="Number of people sentenced") +
     #scale_y_continuous(limits=c(0,126), breaks=seq(0,126,25))+
     #scale_x_continuous(limits=c(15,81), breaks=seq(15,80,5))+ 
-    ggtitle("Sentence Lengths of Connecticut Sentenced Inmates (5/7/2020)", subtitle = "Data Available via Connecticut Open Data")
+    theme(text = element_text(family = "Georgia")) +
+    ggtitle("Sentence lengths of Connecticut people sentenced and incarcerated on May 7, 2020")
 ggsave("Graphs/sentenced_sentence_length-05-07-20.png", width=8, height=5, dpi=900)
 
 #count people with life sentences
@@ -282,9 +284,10 @@ ggplot(CTsentenced_summary_stats, aes(x = race, y = sentence_days_mean)) +
   #scale_color_manual(values = cbPalette) +  
   theme_minimal() + 
   theme(plot.title = element_text(hjust = 0)) +
-  labs(x="", y="Mean Prison Sentence (Days)", caption="Each observation is for an individual sentence, so some individuals with multiple sentences are included multiple times. (n=9,143,844)\n(I exclude life sentences and individuals who are coded inconsistently by race or gender over time.)\nThe means by race are presented with 95% confidence intervals.")+
+  labs(x="", y="Mean prison sentence (days)", caption="The means by race are presented with 95% confidence intervals.")+
   scale_y_continuous(labels = comma, limits = c(0,5000))+
-  ggtitle("Mean Prison Sentence by Racial Group", subtitle = "Data Available via Connecticut Open Data")
+  theme(text = element_text(family = "Georgia")) +
+  ggtitle("Mean sentence length by racial group")
 ggsave("Graphs/sentenced_sentence-race.png", width=7, height=5, dpi=900)
 ```
 

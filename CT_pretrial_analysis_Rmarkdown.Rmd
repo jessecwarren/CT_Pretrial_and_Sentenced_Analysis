@@ -121,9 +121,10 @@ ggplot(data=charges10, aes(x=offense, y=perc)) +
   theme_minimal() +
   scale_y_continuous(labels = percent, limits=c(0,.175), breaks=seq(0,.175,.025)) +
   theme(plot.title = element_text(hjust = 0)) +
-  labs(x="", y="", caption="These calculations consider all 54,367 unique person-admission-offense observations from INSERT DATES.") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
-  ggtitle("Why Are People in Jail? (Top 10 Charges)", subtitle = "Data Available via Connecticut Open Data")
+  labs(x="", y="", caption="Figure modified slightly from Alex Albright's original code.") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 1)) +
+  theme(text = element_text(family = "Georgia")) +
+  ggtitle("Top 10 charges")
 ggsave("Graphs/pretrial_reasons_for_arrest.png", width=7, height=4.5, dpi=900)
 
 ```
@@ -158,9 +159,10 @@ ggplot(data = CTp, aes(race, fill=gender)) +
   theme_minimal() +
   scale_fill_manual(name="Gender", values = c("gold", "dodgerblue"), labels=c("Female", "Male")) +
   theme(plot.title = element_text(hjust = 0)) +
-  labs(x="", y="Number of Pretrial Inmates",
-       caption="The total number of unique pretrial inmates in this time period is INSERT; I present data for INSERT here.\n(I exclude 167 individuals who are coded inconsistently by race or gender over time).\nThe dataset codes Hispanic as a race (this is different than, say, the Census methodology).") +
-  ggtitle("Gender and Race of Connecticut Pretrial Inmates (INSERT DATE)", subtitle = "Data Available via Connecticut Open Data")
+  labs(x="", y="Number of people in pretrial detention",
+       caption="Figure modified slightly from Alex Albright's original code.") +
+   theme(text = element_text(family = "Georgia")) +
+  ggtitle("Gender and race of people in pretrial detention on May 2, 2020")
 ggsave("Graphs/pretrial_gender_race.png", width=7, height=4.5, dpi=900)
 
 #summary stats
@@ -198,10 +200,11 @@ ggplot(data = CTrace_c, aes(x=source, y=percent, fill=race)) +
   scale_fill_manual(name = "Race", values = cbPalette) +  
   theme(plot.title = element_text(hjust = 0)) +
   labs(x="", y="",
-       caption="The pretrial inmate population covers 34,761 people in DOC facilities 7/1/16-7/28/19.\n(I exclude 131 individuals who are coded inconsistently by race or gender over time).\nOverall Population data is estimated from the US Census QuickFacts.")+
+       caption="Figure modified slightly from Alex Albright's original code.")+
   scale_y_continuous(labels = percent) +
-  scale_x_discrete(labels=c("Overall Population", "Pretrial Inmate Population")) + 
-  ggtitle("Overall Connecticut Population vs. Connecticut Pretrial Inmate Population", subtitle = "Data Available via Connecticut Open Data")
+  scale_x_discrete(labels=c("Overall population", "Pretrial detention population")) + 
+  theme(text = element_text(family = "Georgia")) +
+  ggtitle("Overall Connecticut population vs. connecticut pretrial detention population")
 ggsave("Graphs/pretrial_race_compare.png", width=7, height=5, dpi=900)
 
 #summary stats
@@ -275,10 +278,11 @@ ggplot(data = CTbond, aes(bond_amount, fill = race)) +
   theme_minimal() +
   theme(plot.title = element_text(hjust = 0)) +
   labs(x="Bond Amount ($)", y="Number of Pretrial Inmates", 
-       caption="\nThis plot uses a log10 transformation of the bond amount axis.\nEach observation is the first observation of a person-admission. (n=58,910)\n(Again, I exclude individuals who are coded inconsistently by race or gender over time.)\nI consider the bond amount at first day observed in jail for a given date of admission.") +
+       caption="Figure modified slightly from Alex Albright's original code.") +
   scale_x_log10(labels = comma) +
   scale_y_continuous(labels = comma) +
   #scale_x_continuous(limits=c(15,80), breaks=seq(15,80,5)) + 
+  theme(text = element_text(family = "Georgia")) +
   ggtitle("Bond Amounts for Connecticut Pretrial Inmates (INSERT DATES)", subtitle = "Data Available via Connecticut Open Data")
 ggsave("Graphs/pretrial_bond_dist_race.png", width=8, height=5, dpi=900)
 ```
@@ -296,10 +300,11 @@ ggplot(CTbondr, aes(x=race, y=bond_amount_mean)) +
   geom_point() +
   theme_minimal() +
   theme(plot.title = element_text(hjust = 0)) +
-  labs(x="", y="Mean Bond Amount ($)", caption="I consider only the first observation of bond amount for a given admission (n=58,910).\nThe means by race are presented with 95% confidence intervals.") +
+  labs(x="", y="Mean bond amount ($)", caption="Figure modified slightly from Alex Albright's original code.\nThe means by race are presented with 95% confidence intervals.") +
   scale_y_continuous(labels = comma, limits=c(0,110500), breaks=seq(0,110000,10000))+
   #scale_y_continuous(limits=c(0,151), breaks=seq(0,150,25))+
-  ggtitle("Mean Bond of Connecticut Pretrial Inmates by Racial Group", subtitle = "Data Available via Connecticut Open Data")
+  theme(text = element_text(family = "Georgia")) +
+  ggtitle("Mean bond of people in pretrial detention by racial group")
 ggsave("Graphs/_pretrial_bond_race.png", width=6, height=5, dpi=900)
 ```
 
@@ -388,9 +393,10 @@ ggplot(CTds1, aes(x = race, y = dur_mean)) +
   #scale_color_manual(values = cbPalette) +  
   theme_minimal() + 
   theme(plot.title = element_text(hjust = 0)) +
-  labs(x="", y="Mean Jail Stay (Days)", caption="Each observation is for some admission which concluded in a release from jail before 5/2/2020. (n=59,003)\n(Again, I exclude individuals who are coded inconsistently by race or gender over time.)\nThe means by race are presented with 95% confidence intervals.")+
+  labs(x="", y="Mean pretrial detention length (days)", caption="Figure modified slightly from Alex Albright's original code.\nThe means by race are presented with 95% confidence intervals.")+
   scale_y_continuous(labels = comma, limits = c(0,85), breaks = seq(0,85,15))+
-  ggtitle("Mean Pretrial Jail Stay by Racial Group", subtitle = "Data Available via Connecticut Open Data")
+  theme(text = element_text(family = "Georgia")) +
+  ggtitle("Mean pretrial detention length by racial group")
 ggsave("Graphs/pretrial_stay-race.png", width=7, height=5, dpi=900)
 ```
 
